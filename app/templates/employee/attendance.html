@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>My Dashboard — Richa Global</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#0f0f1a;color:#e2e8f0;display:flex}
+        :root{--primary:#3b82f6;--accent:#06b6d4;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1e293b;--card2:#0f172a;--border:rgba(59,130,246,0.15);--muted:#94a3b8;--bg:#020617}
+        .sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+        .sidebar-brand{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+        .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+        .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:var(--muted)}
+        .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+        .nav-section{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:2px}
+        .nav-item:hover,.nav-item.active{background:rgba(59,130,246,.15);color:var(--primary)}
+        .nav-item i{width:18px;text-align:center}
+        .sidebar-footer{padding:16px 12px}
+        .user-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+        .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
+        .user-name{font-size:13px;font-weight:600;color:#fff}.user-role{font-size:11px;color:var(--muted)}
+        .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+        .main{margin-left:260px;flex:1;min-height:100vh;background:var(--bg)}
+        .topbar{position:sticky;top:0;background:rgba(2,6,23,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;z-index:90}
+        .topbar-title{font-size:18px;font-weight:700;color:#fff}
+        .content{padding:28px}
+        
+        .grid-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+        
+        /* Dashboard Cards */
+        .glass-card { background: rgba(30,41,59,0.7); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .glass-card-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .glass-card-title i { color: var(--primary); }
+        
+        /* Today Hero Widget */
+        .hero-widget { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(6,182,212,0.1)); border: 1px solid rgba(59,130,246,0.3); border-radius: 20px; padding: 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .hero-title { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+        .hero-sub { font-size: 14px; color: var(--muted); }
+        .action-btns { display: flex; gap: 12px; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+        .btn-success { background: var(--success); color: #fff; box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
+        .btn-danger { background: var(--danger); color: #fff; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-box { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+        .stat-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); opacity: 0.5; }
+        .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 800; color: #fff; }
+        .stat-sub { font-size: 11px; color: #10b981; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+        
+        /* Timeline */
+        .timeline { position: relative; padding-left: 20px; margin-top: 10px; }
+        .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--border); }
+        .tl-item { position: relative; margin-bottom: 20px; }
+        .tl-item::before { content: ''; position: absolute; left: -25px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--card2); border: 2px solid var(--primary); z-index: 2; }
+        .tl-item.success::before { border-color: var(--success); }
+        .tl-item.warning::before { border-color: var(--warning); }
+        .tl-time { font-size: 11px; font-weight: 600; color: var(--primary); margin-bottom: 4px; }
+        .tl-content { font-size: 13px; color: #fff; }
+        
+        /* Badge */
+        .badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-success { background: rgba(16,185,129,.15); color: #10b981; }
+        .badge-warning { background: rgba(245,158,11,.15); color: #f59e0b; }
+        
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 30px; width: 100%; max-width: 450px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .modal-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .close-btn { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: #fff; }
+        .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 12px 14px; background: rgba(15,15,26,0.6); border: 1px solid var(--border); border-radius: 8px; color: #e2e8f0; font-size: 13px; outline: none; font-family: 'Inter', sans-serif; resize: vertical; margin-bottom: 16px; transition: border-color 0.2s; }
+        .form-control:focus { border-color: var(--primary); }
+        .btn-primary { background: var(--primary); color: #fff; width: 100%; justify-content: center; }
+        
+        /* Toast */
+        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+        .toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;min-width:280px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:slideIn .3s ease}
+        .toast.success{border-left:4px solid var(--success)}.toast.error{border-left:4px solid var(--danger)}
+        @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+        
+        /* Chart wrapper */
+        .chart-container { position: relative; height: 180px; width: 100%; }
+    </style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Checkout Modal -->
+<div class="modal-overlay" id="checkoutModal">
+    <div class="modal">
+        <div class="modal-title">
+            <span><i class="fas fa-clipboard-check" style="color:var(--primary);margin-right:8px"></i> End of Day Summary</span>
+            <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <label class="form-label">Work Summary (What did you do today?)</label>
+        <textarea id="workSummary" class="form-control" placeholder="Briefly describe your tasks..." style="height: 80px;"></textarea>
+        
+        <label class="form-label">Tomorrow's Plan</label>
+        <textarea id="tomorrowPlan" class="form-control" placeholder="What are your priorities for tomorrow?" style="height: 80px;"></textarea>
+        
+        <button class="btn btn-primary" onclick="submitCheckOut()"><i class="fas fa-sign-out-alt"></i> Complete Check-Out</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="remarksModal">
+    <div class="modal">
+        <div class="modal-title">
+            <span><i class="fas fa-exclamation-circle" style="color:var(--warning);margin-right:8px"></i> Remarks Required</span>
+            <button class="close-btn" onclick="closeRemarksModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-subtitle" id="remarksMessage" style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Please provide a reason.</div>
+        
+        <label class="form-label">Your Remarks</label>
+        <textarea id="remarksInput" class="form-control" placeholder="Enter your reason here..." style="height: 100px;" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submitRemarks(); }"></textarea>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+            <button class="btn btn-secondary" onclick="closeRemarksModal()" style="background: rgba(255,255,255,0.1); color: #fff;">Cancel</button>
+            <button class="btn btn-primary" onclick="submitRemarks()"><i class="fas fa-paper-plane"></i> Submit</button>
+        </div>
+    </div>
+</div>
+
+<nav class="sidebar">
+    <div class="sidebar-brand"><div class="logo">E</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Employee Portal</div></div></div>
+    <div class="sidebar-nav">
+        <div class="nav-section">My Workspace</div>
+        <a href="/employee/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/employee/tasks" class="nav-item"><i class="fas fa-tasks"></i> My Tasks</a>
+        <a href="/employee/attendance" class="nav-item active"><i class="fas fa-chart-pie"></i> Productivity</a>
+        <a href="/employee/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages</a>
+    </div>
+    <div class="sidebar-footer">
+        <div class="user-card"><div class="user-avatar" id="sidebarAvatar">E</div><div><div class="user-name" id="sidebarName">Employee</div><div class="user-role" id="sidebarId">—</div></div></div>
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
+</nav>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-title">Productivity & Attendance</div>
+    </div>
+    <div class="content">
+        
+        <!-- Hero Widget -->
+        <div class="hero-widget">
+            <div>
+                <div class="hero-title" id="todayStatus">Loading...</div>
+                <div class="hero-sub" id="todayDate"></div>
+            </div>
+            <div class="action-btns">
+                <button class="btn btn-success" id="checkInBtn" onclick="checkIn()" disabled><i class="fas fa-sign-in-alt"></i> Check In</button>
+                <button class="btn btn-danger" id="checkOutBtn" onclick="openCheckoutModal()" disabled><i class="fas fa-sign-out-alt"></i> Check Out</button>
+            </div>
+        </div>
+
+        <div class="grid-layout">
+            <!-- Left Column: Stats & Charts -->
+            <div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Productivity Score</div>
+                        <div class="stat-value" id="prodScore">0%</div>
+                        <div class="stat-sub"><i class="fas fa-bolt"></i> Based on Tasks</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Tasks Completed</div>
+                        <div class="stat-value" id="taskComp">0</div>
+                        <div class="stat-sub"><i class="fas fa-check-double"></i> Today</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Tasks Pending</div>
+                        <div class="stat-value" id="taskPend">0</div>
+                        <div class="stat-sub" style="color:var(--warning)"><i class="fas fa-hourglass-half"></i> Current</div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="glass-card-title"><i class="fas fa-chart-line"></i> Monthly Overview</div>
+                    <div class="stats-grid" style="margin-bottom:0">
+                        <div class="stat-box" style="padding:15px; background:rgba(0,0,0,0.2)">
+                            <div class="stat-label">Present</div>
+                            <div class="stat-value" id="monPresent">0</div>
+                        </div>
+                        <div class="stat-box" style="padding:15px; background:rgba(0,0,0,0.2)">
+                            <div class="stat-label">Late</div>
+                            <div class="stat-value" id="monLate" style="color:var(--warning)">0</div>
+                        </div>
+                        <div class="stat-box" style="padding:15px; background:rgba(0,0,0,0.2)">
+                            <div class="stat-label">Overtime</div>
+                            <div class="stat-value" id="monOvertime" style="color:var(--primary)">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Timeline -->
+            <div>
+                <div class="glass-card" style="height:100%">
+                    <div class="glass-card-title"><i class="fas fa-history"></i> Today's Activity</div>
+                    <div class="timeline" id="activityTimeline">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('access_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || localStorage.getItem('role') !== 'employee') window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Employee';
+    document.getElementById('sidebarAvatar').textContent = (user.name||'E')[0].toUpperCase();
+    document.getElementById('sidebarId').textContent = user.employee_id || '—';
+    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+    function showToast(msg, type='info') {
+        const c=document.getElementById('toastContainer');const t=document.createElement('div');
+        t.className=`toast ${type}`;t.innerHTML=`<i class="fas fa-${type==='success'?'check-circle':'times-circle'}" style="color:var(--${type});font-size:18px"></i><span style="font-size:13px">${msg}</span>`;
+        c.appendChild(t);setTimeout(()=>t.remove(),3500);
+    }
+    function logout(){localStorage.clear();window.location.href='/login';}
+    async function api(url,method='GET',body=null){
+        const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}};
+        if(body)opts.body=JSON.stringify(body);return fetch(url,opts);
+    }
+    function fmtTime(iso){return iso?new Date(iso).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'—';}
+
+    async function loadDashboard() {
+        // Dashboard Stats
+        const r1 = await api('/api/attendance/employee/dashboard');
+        const dash = await r1.json();
+        
+        document.getElementById('prodScore').textContent = dash.productivity_score.toFixed(0) + '%';
+        document.getElementById('taskComp').textContent = dash.tasks_completed;
+        document.getElementById('taskPend').textContent = dash.tasks_pending;
+        document.getElementById('monPresent').textContent = dash.monthly_present;
+        document.getElementById('monLate').textContent = dash.monthly_late;
+        document.getElementById('monOvertime').textContent = dash.monthly_overtime;
+
+        const rec = dash.today;
+        const statusEl = document.getElementById('todayStatus');
+        const timeline = document.getElementById('activityTimeline');
+        
+        if (!rec) {
+            statusEl.textContent = "Good Morning! You haven't checked in.";
+            document.getElementById('checkInBtn').disabled = false;
+            document.getElementById('checkOutBtn').disabled = true;
+            timeline.innerHTML = '<div style="color:var(--muted);font-size:13px;padding-top:10px">Waiting for check in...</div>';
+        } else {
+            if (rec.check_out) {
+                let statusHtml = rec.is_half_day ? `<span class="badge badge-warning" style="margin-left: 8px;">Half Day</span>` : '';
+                statusEl.innerHTML = `Great work today, <span style="color:var(--success)">Day Completed!</span> ${statusHtml}`;
+                document.getElementById('checkInBtn').disabled = false;
+                document.getElementById('checkOutBtn').disabled = true;
+                
+                timeline.innerHTML = `
+                    <div class="tl-item success">
+                        <div class="tl-time">${new Date(rec.check_in).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+                        <div class="tl-content">First Checked In ${rec.is_late?'<span class="badge badge-warning">Late</span>':''}</div>
+                    </div>
+                    <div class="tl-item">
+                        <div class="tl-time">${new Date(rec.check_out).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+                        <div class="tl-content">Last Checked Out</div>
+                    </div>
+                `;
+            } else {
+                statusEl.innerHTML = `You are <span style="color:var(--success)">Currently Working</span>`;
+                document.getElementById('checkInBtn').disabled = true;
+                document.getElementById('checkOutBtn').disabled = false;
+                
+                timeline.innerHTML = `
+                    <div class="tl-item success">
+                        <div class="tl-time">${fmtTime(rec.check_in)}</div>
+                        <div class="tl-content">Checked In ${rec.is_late?'<span class="badge badge-warning">Late</span>':''}</div>
+                    </div>
+                    <div class="tl-item" style="border-color:transparent">
+                        <div class="tl-time">Now</div>
+                        <div class="tl-content" style="color:var(--muted)">Working on tasks...</div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    async function checkIn(remarks = '') {
+        const body = remarks ? { remarks } : null;
+        const r = await api('/api/attendance/check-in','POST', body);
+        const d = await r.json();
+        
+        if (r.ok) { 
+            showToast('Checked in successfully!', 'success'); 
+            loadDashboard(); 
+        } else if (d.error === 'remarks_required') {
+            openRemarksModal(d.message, 'check_in');
+        } else {
+            showToast(d.error || 'Error', 'error');
+        }
+    }
+    
+    let pendingAction = null;
+    function openRemarksModal(message, action) {
+        pendingAction = action;
+        document.getElementById('remarksMessage').textContent = message;
+        document.getElementById('remarksInput').value = '';
+        document.getElementById('remarksModal').classList.add('active');
+    }
+    function closeRemarksModal() {
+        document.getElementById('remarksModal').classList.remove('active');
+        pendingAction = null;
+    }
+    function submitRemarks() {
+        const val = document.getElementById('remarksInput').value.trim();
+        if (!val) {
+            showToast('Remarks cannot be empty!', 'error');
+            return;
+        }
+        const action = pendingAction;
+        closeRemarksModal();
+        if (action === 'check_in') {
+            checkIn(val);
+        }
+    }
+    
+    function openCheckoutModal() {
+        document.getElementById('checkoutModal').classList.add('active');
+    }
+    function closeModal() {
+        document.getElementById('checkoutModal').classList.remove('active');
+    }
+    
+    async function submitCheckOut() {
+        const summary = document.getElementById('workSummary').value.trim();
+        const tomorrow = document.getElementById('tomorrowPlan').value.trim();
+        
+        if (!summary) {
+            showToast("Work summary is required", "error");
+            return;
+        }
+        
+        const r = await api('/api/attendance/check-out','POST', {
+            remarks: summary,
+            tomorrow_plan: tomorrow
+        });
+        const d = await r.json();
+        if(r.ok){
+            closeModal();
+            showToast('Checked out successfully!','success');
+            loadDashboard();
+        } else showToast(d.error||'Error','error');
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>

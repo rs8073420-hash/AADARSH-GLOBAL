@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Attendance Dashboard — Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#0f0f1a;color:#e2e8f0;display:flex}
+        :root{--primary:#6366f1;--accent:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1a1a2e;--card2:#16213e;--border:rgba(99,102,241,0.15);--muted:#94a3b8;--bg:#0f0f1a}
+        .sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+        .sidebar-brand{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+        .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+        .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:var(--muted)}
+        .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+        .nav-section{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:2px}
+        .nav-item:hover,.nav-item.active{background:rgba(99,102,241,.15);color:var(--primary)}
+        .nav-item i{width:18px;text-align:center}
+        .sidebar-footer{padding:16px 12px}
+        .user-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
+        .user-name{font-size:13px;font-weight:600;color:#fff}.user-role{font-size:11px;color:var(--muted)}
+        .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+        .main{margin-left:260px;flex:1;min-height:100vh}
+        .topbar{position:sticky;top:0;background:rgba(15,15,26,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;z-index:90}
+        .topbar-title{font-size:18px;font-weight:700;color:#fff}
+        .content{padding:28px}
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .stat-val { font-size: 24px; font-weight: 800; color: #fff; line-height: 1.2; }
+        .stat-label { font-size: 12px; color: var(--muted); }
+        
+        .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .glass-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+        .card-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        
+        .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap; background: var(--card2); padding: 16px; border-radius: 12px; border: 1px solid var(--border); }
+        .filter-select,.date-input{padding:9px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;font-family:'Inter',sans-serif;}
+        .filter-select:focus,.date-input:focus{border-color:var(--primary)}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:'Inter',sans-serif}
+        .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{opacity:.9}
+        
+        table{width:100%;border-collapse:collapse}
+        th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;border-bottom:1px solid var(--border)}
+        td{padding:12px 14px;font-size:13px;border-bottom:1px solid rgba(99,102,241,.05); vertical-align: middle;}
+        tr:last-child td{border-bottom:none}tr:hover td{background:rgba(99,102,241,.04)}
+        
+        .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+        .badge-success{background:rgba(16,185,129,.15);color:#10b981}
+        .badge-warning{background:rgba(245,158,11,.15);color:#f59e0b}
+        .badge-danger{background:rgba(239,68,68,.15);color:#ef4444}
+        .badge-primary{background:rgba(99,102,241,.15);color:#6366f1}
+        .badge-muted{background:rgba(148,163,184,.15);color:#94a3b8}
+
+        .prod-bar-bg { width: 100px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-top: 4px; }
+        .prod-bar-fill { height: 100%; background: var(--success); border-radius: 10px; }
+
+        /* Toast */
+        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+        .toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:slideIn .3s ease}
+        .toast.info{border-left:4px solid var(--primary)}
+        @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+    </style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+
+<nav class="sidebar">
+    <div class="sidebar-brand"><div class="logo">R</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Admin Panel</div></div></div>
+    <div class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a href="/admin/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/admin/employees" class="nav-item"><i class="fas fa-users"></i> Employees</a>
+        <a href="/admin/tasks" class="nav-item"><i class="fas fa-tasks"></i> Tasks</a>
+        <a href="/admin/attendance" class="nav-item active"><i class="fas fa-clock"></i> Attendance</a>
+        <div class="nav-section">Insights</div>
+        <a href="/admin/analytics" class="nav-item"><i class="fas fa-chart-line"></i> Analytics</a>
+        <a href="/admin/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages</a>
+    </div>
+    <div class="sidebar-footer">
+        <div class="user-card"><div class="avatar" id="sidebarAvatar">A</div><div><div class="user-name" id="sidebarName">Admin</div><div class="user-role">Administrator</div></div></div>
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
+</nav>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-title">Attendance & Productivity</div>
+    </div>
+    <div class="content">
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(16,185,129,.15);color:#10b981"><i class="fas fa-user-check"></i></div>
+                <div><div class="stat-val" id="s-present">—</div><div class="stat-label">Present Today</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(239,68,68,.15);color:#ef4444"><i class="fas fa-user-times"></i></div>
+                <div><div class="stat-val" id="s-absent">—</div><div class="stat-label">Absent Today</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(245,158,11,.15);color:#f59e0b"><i class="fas fa-clock"></i></div>
+                <div><div class="stat-val" id="s-late">—</div><div class="stat-label">Late Arrivals</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(99,102,241,.15);color:#6366f1"><i class="fas fa-sign-out-alt"></i></div>
+                <div><div class="stat-val" id="s-early">—</div><div class="stat-label">Checked Out</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(6,182,212,.15);color:#06b6d4"><i class="fas fa-hourglass-half"></i></div>
+                <div><div class="stat-val" id="s-overtime">—</div><div class="stat-label">Overtime</div></div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="glass-card">
+                <div class="card-title"><i class="fas fa-chart-area"></i> 7-Day Attendance Trends</div>
+                <div style="height:250px;width:100%"><canvas id="trendChart"></canvas></div>
+            </div>
+            <div class="glass-card">
+                <div class="card-title"><i class="fas fa-chart-pie"></i> Today's Summary</div>
+                <div style="height:250px;width:100%;display:flex;align-items:center;justify-content:center"><canvas id="pieChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="card-title"><i class="fas fa-list"></i> Employee Logs</div>
+            <div class="toolbar">
+                <input type="date" class="date-input" id="startDate">
+                <input type="date" class="date-input" id="endDate">
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="late">Late Arrivals</option>
+                    <option value="overtime">Overtime</option>
+                    <option value="early_exit">Early Exits</option>
+                </select>
+                <input type="text" class="filter-select" id="searchName" placeholder="Search employee name..." style="width: 200px;">
+                <button class="btn btn-primary" onclick="loadTable()"><i class="fas fa-search"></i> Filter</button>
+            </div>
+            <div style="overflow-x:auto"><table>
+                <thead><tr>
+                    <th>Employee</th>
+                    <th>Date</th>
+                    <th>In / Out</th>
+                    <th>Hours</th>
+                    <th>Punctuality</th>
+                    <th>Productivity</th>
+                    <th>Remarks</th>
+                </tr></thead>
+                <tbody id="attTable"></tbody>
+            </table></div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('access_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || localStorage.getItem('role') !== 'admin') window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Admin';
+    document.getElementById('sidebarAvatar').textContent = (user.name||'A')[0].toUpperCase();
+
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = today;
+
+    function logout(){localStorage.clear();window.location.href='/login';}
+    function showToast(msg) {
+        const c=document.getElementById('toastContainer');const t=document.createElement('div');
+        t.className=`toast info`;t.innerHTML=`<i class="fas fa-info-circle" style="color:var(--primary);font-size:18px"></i><span style="font-size:13px">${msg}</span>`;
+        c.appendChild(t);setTimeout(()=>t.remove(),3500);
+    }
+
+    let trendChart, pieChart;
+
+    async function loadDashboardStats() {
+        const r = await fetch('/api/attendance/admin/dashboard', {headers:{'Authorization':'Bearer '+token}});
+        const d = await r.json();
+        
+        document.getElementById('s-present').textContent = d.present;
+        document.getElementById('s-absent').textContent = d.absent;
+        document.getElementById('s-late').textContent = d.late;
+        document.getElementById('s-early').textContent = d.checked_out;
+        document.getElementById('s-overtime').textContent = d.overtime;
+
+        // Render Charts
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        if(trendChart) trendChart.destroy();
+        trendChart = new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: d.trends.dates,
+                datasets: [
+                    { label: 'Present', data: d.trends.present, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 },
+                    { label: 'Absent', data: d.trends.absent, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                },
+                plugins: { legend: { labels: { color: '#e2e8f0' } } }
+            }
+        });
+
+        const ctxPie = document.getElementById('pieChart').getContext('2d');
+        if(pieChart) pieChart.destroy();
+        pieChart = new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['On Time', 'Late', 'Absent'],
+                datasets: [{
+                    data: [d.present - d.late, d.late, d.absent],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0', padding: 20 } } },
+                cutout: '70%'
+            }
+        });
+    }
+
+    async function loadTable() {
+        const s = document.getElementById('startDate').value;
+        const e = document.getElementById('endDate').value;
+        const status = document.getElementById('statusFilter').value;
+        const search = encodeURIComponent(document.getElementById('searchName').value.trim());
+        
+        const r = await fetch(`/api/attendance/all?start=${s}&end=${e}&status=${status}&search=${search}`,{headers:{'Authorization':'Bearer '+token}});
+        const data = await r.json();
+        const records = data.records || [];
+        
+        const tbody = document.getElementById('attTable');
+        if (!records.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:40px">No records found</td></tr>'; return; }
+        
+        tbody.innerHTML = records.map(r=>{
+            const inTime = r.check_in ? new Date(r.check_in).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '—';
+            const outTime = r.check_out ? new Date(r.check_out).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : 'Working...';
+            
+            let badges = '';
+            if (r.is_late) badges += `<span class="badge badge-warning" style="margin-right:4px">Late</span>`;
+            if (r.overtime) badges += `<span class="badge badge-primary" style="margin-right:4px">Overtime</span>`;
+            if (r.early_exit) badges += `<span class="badge badge-danger">Early Exit</span>`;
+            if (!badges) badges = `<span class="badge badge-success">On Time</span>`;
+            
+            const prodColor = (r.productivity_percentage||0) >= 80 ? '#10b981' : ((r.productivity_percentage||0) >= 50 ? '#f59e0b' : '#ef4444');
+
+            return `
+            <tr>
+                <td>
+                    <div style="font-weight:600;color:#fff">${r.employee_name||'—'}</div>
+                </td>
+                <td>${r.date}</td>
+                <td>
+                    <div><span style="color:var(--success)"><i class="fas fa-sign-in-alt"></i> ${inTime}</span></div>
+                    <div style="margin-top:4px"><span style="color:var(--danger)"><i class="fas fa-sign-out-alt"></i> ${outTime}</span></div>
+                </td>
+                <td><span style="font-weight:600">${r.working_hours?r.working_hours.toFixed(1)+'h':'—'}</span></td>
+                <td>${badges}</td>
+                <td>
+                    ${r.check_out ? `
+                    <div style="font-size:12px; font-weight:600; color:${prodColor}">${(r.productivity_percentage||0).toFixed(0)}%</div>
+                    <div class="prod-bar-bg"><div class="prod-bar-fill" style="width:${r.productivity_percentage||0}%; background:${prodColor}"></div></div>
+                    <div style="font-size:10px; color:var(--muted); margin-top:4px">${r.completed_tasks||0} of ${(r.completed_tasks||0)+(r.pending_tasks||0)} Tasks</div>
+                    ` : '<span class="badge badge-muted">Not Checked Out</span>'}
+                </td>
+                <td>
+                    ${r.remarks ? `<div style="font-size:12px; color:#cbd5e1; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.remarks}">📝 ${r.remarks}</div>` : '—'}
+                    ${r.tomorrow_plan ? `<div style="font-size:11px; color:var(--primary); margin-top:4px; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.tomorrow_plan}">📅 ${r.tomorrow_plan}</div>` : ''}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Real-time integration
+    const socket = io({auth:{token}});
+    socket.on('attendance_update', (data) => {
+        showToast(`${data.employee_name} has just ${data.action.replace('_', ' ')}.`);
+        loadDashboardStats();
+        loadTable();
+    });
+
+    loadDashboardStats();
+    loadTable();
+</script>
+</body>
+</html>

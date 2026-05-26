@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Richa Global</title>
+    <meta name="description" content="Richa Global Employee Management System - Secure Login">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        .orb1 { width: 400px; height: 400px; background: #6366f1; top: -100px; left: -100px; }
+        .orb2 { width: 300px; height: 300px; background: #8b5cf6; bottom: -80px; right: -80px; }
+        .orb3 { width: 200px; height: 200px; background: #06b6d4; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+        .login-container {
+            background: rgba(26,26,46,0.9);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 20px;
+            padding: 44px 40px;
+            width: 100%;
+            max-width: 420px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+        }
+        .logo-area {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .logo-icon {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 14px;
+            box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+        }
+        h1 { font-size: 22px; font-weight: 700; color: #fff; }
+        .subtitle { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .form-group { margin-bottom: 18px; }
+        .form-label {
+            display: block; font-size: 12px; font-weight: 600;
+            color: #94a3b8; margin-bottom: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .input-wrap { position: relative; }
+        .input-icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: #94a3b8; font-size: 14px;
+        }
+        .form-control {
+            width: 100%; padding: 12px 14px 12px 40px;
+            background: rgba(15,15,26,0.8);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .form-control:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+        }
+        .form-control::placeholder { color: #4a5568; }
+        .pw-toggle {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            color: #94a3b8; cursor: pointer; font-size: 14px;
+        }
+        .btn-login {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none; border-radius: 10px;
+            color: #fff; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-login:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+        .btn-login:active { transform: translateY(0); }
+        .error-msg {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .footer-note {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: #4a5568;
+        }
+        .spinner { display: none; }
+        .btn-login.loading .btn-text { display: none; }
+        .btn-login.loading .spinner { display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="bg-orb orb1"></div>
+    <div class="bg-orb orb2"></div>
+    <div class="bg-orb orb3"></div>
+
+    <div class="login-container">
+        <div class="logo-area">
+            <div class="logo-icon">R</div>
+            <h1>Richa Global</h1>
+            <p class="subtitle">Employee Management System</p>
+        </div>
+
+        <div class="error-msg" id="errorMsg"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label">Employee ID / Mobile</label>
+                <div class="input-wrap">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="identifier" class="form-control" placeholder="Enter your ID or mobile" required autocomplete="username">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="input-wrap">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+                    <i class="fas fa-eye pw-toggle" id="pwToggle"></i>
+                </div>
+            </div>
+            <button type="submit" class="btn-login" id="loginBtn">
+                <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
+                <span class="spinner"><i class="fas fa-spinner fa-spin"></i> Signing in...</span>
+            </button>
+        </form>
+
+        <p class="footer-note">© 2024 Richa Global. All rights reserved.</p>
+    </div>
+
+    <script>
+        const pwToggle = document.getElementById('pwToggle');
+        const pwInput = document.getElementById('password');
+        pwToggle.addEventListener('click', () => {
+            if (pwInput.type === 'password') {
+                pwInput.type = 'text';
+                pwToggle.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                pwInput.type = 'password';
+                pwToggle.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errMsg = document.getElementById('errorMsg');
+            btn.classList.add('loading');
+            errMsg.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        identifier: document.getElementById('identifier').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('role', data.role);
+                    if (data.role === 'admin') {
+                        window.location.href = '/admin/dashboard';
+                    } else {
+                        window.location.href = '/employee/dashboard';
+                    }
+                } else {
+                    errMsg.textContent = data.error || 'Login failed';
+                    errMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errMsg.textContent = 'Connection error. Please try again.';
+                errMsg.style.display = 'block';
+            } finally {
+                btn.classList.remove('loading');
+            }
+        });
+
+        // Redirect if already logged in
+        const token = localStorage.getItem('access_token');
+        const role = localStorage.getItem('role');
+        if (token && role) {
+            window.location.href = role === 'admin' ? '/admin/dashboard' : '/employee/dashboard';
+        }
+    </script>
+</body>
+</html>

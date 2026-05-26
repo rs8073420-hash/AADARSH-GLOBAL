@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Workspace — Richa Global</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#8b5cf6',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        surface: '#ffffff',
+                        background: '#f8fafc'
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for a clean UI */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Glass UI Utilities */
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .glass-card { background: #ffffff; border: 1px solid #f1f5f9; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); border-radius: 24px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden; }
+        .glass-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.12); border-color: #e2e8f0; }
+        
+        /* Vibrant gradients */
+        .icon-gradient-primary { background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%); color: white; }
+        .icon-gradient-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: white; }
+        .icon-gradient-danger { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); color: white; }
+        .icon-gradient-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: white; }
+        .icon-gradient-purple { background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); color: white; }
+
+        /* Subtle glowing background blobs */
+        .bg-blob { position: absolute; filter: blur(80px); opacity: 0.4; z-index: -1; border-radius: 50%; pointer-events: none; }
+        .blob-1 { top: -10%; right: -5%; width: 40vw; height: 40vw; background: #dcfce7; }
+        .blob-2 { bottom: -10%; left: -5%; width: 40vw; height: 40vw; background: #e0e7ff; }
+        
+        /* Sidebar styling */
+        .sidebar-link { transition: all 0.2s; position: relative; }
+        .sidebar-link:hover { background: #f1f5f9; color: #1e293b; }
+        .sidebar-link.active { background: #eef2ff; color: #4f46e5; font-weight: 600; }
+        .sidebar-link.active::before { content: ''; position: absolute; left: 0; top: 10%; height: 80%; width: 4px; background: #4f46e5; border-radius: 0 4px 4px 0; }
+        
+        /* Toast */
+        .toast-container{position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:12px}
+        .toast{background:#fff;border:1px solid #f1f5f9;border-radius:16px;padding:16px 20px;min-width:300px;display:flex;align-items:center;gap:14px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.1);animation:slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;}
+        @keyframes slideIn{from{opacity:0;transform:translateX(40px) scale(0.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+
+        /* Modal */
+        .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:all 0.3s cubic-bezier(0.4,0,0.2,1)}
+        .modal-overlay.active{opacity:1;pointer-events:auto}
+        .modal-content{background:#fff;border-radius:24px;padding:32px;width:100%;max-width:400px;transform:scale(0.95) translateY(20px);transition:all 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+        .modal-overlay.active .modal-content{transform:scale(1) translateY(0)}
+
+        .animated-delay-1 { animation-delay: 0.1s; }
+        .animated-delay-2 { animation-delay: 0.2s; }
+
+        /* Welcome Banner Gradient Background */
+        .welcome-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            position: relative;
+        }
+        .welcome-gradient::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; width: 40%;
+            background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.05));
+            border-radius: 0 24px 24px 0;
+            pointer-events: none;
+        }
+
+        /* Spinning dashed circle for attendance */
+        .att-spin {
+            animation: spin 20s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-background text-slate-800 antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+<!-- Ambient Background -->
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Sidebar Layout -->
+<div class="flex h-screen overflow-hidden">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 glass-panel border-r border-slate-200/60 flex flex-col z-50 shrink-0 hidden md:flex shadow-xl shadow-slate-200/20">
+        <div class="p-6 border-b border-slate-200/60 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">R</div>
+            <div>
+                <h1 class="font-bold text-slate-800 text-lg leading-tight tracking-tight">Richa Global</h1>
+                <p class="text-xs font-semibold text-indigo-600 tracking-wider uppercase">Workspace</p>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-1">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-4 first:mt-0">My Portals</div>
+            <a href="/employee/dashboard" class="sidebar-link active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-desktop w-5 text-center text-lg"></i> Overview
+            </a>
+            <a href="/employee/tasks" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-list-check w-5 text-center text-lg"></i> My Tasks
+            </a>
+            <a href="/employee/attendance" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-calendar-check w-5 text-center text-lg"></i> Attendance
+            </a>
+            <a href="/employee/messages" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 mt-2">
+                <i class="fas fa-envelope w-5 text-center text-lg"></i> Inbox
+            </a>
+        </div>
+
+        <div class="p-5 border-t border-slate-200/60 bg-slate-50/50">
+            <div class="flex items-center gap-3 mb-4 p-2 rounded-xl hover:bg-white transition-colors cursor-pointer border border-transparent hover:border-slate-200 shadow-sm">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-bold" id="sidebarAvatar">U</div>
+                <div class="overflow-hidden">
+                    <div class="text-sm font-bold text-slate-800 truncate" id="sidebarName">Employee</div>
+                    <div class="text-xs text-slate-500 truncate" id="sidebarRole">Staff</div>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 border border-red-100">
+                <i class="fas fa-power-off"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <!-- Topbar -->
+        <header class="h-20 glass-panel border-b border-slate-200/60 flex items-center justify-between px-8 z-40 shrink-0">
+            <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Personal Workspace</h2>
+            
+            <div class="flex items-center gap-4">
+                <a href="/employee/messages" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 flex items-center justify-center transition-all shadow-sm relative">
+                    <i class="fas fa-bell"></i>
+                </a>
+                <button onclick="loadStats();loadTasks()" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 flex items-center justify-center transition-all shadow-sm">
+                    <i class="fas fa-rotate"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Scrollable Area -->
+        <div class="flex-1 overflow-y-auto p-6 md:p-8">
+            
+            <!-- Welcome Banner with Actions -->
+            <div class="welcome-gradient border border-slate-200 rounded-3xl p-8 mb-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up">
+                <div>
+                    <h2 class="text-3xl font-black text-slate-800 mb-2 tracking-tight">Good Morning!</h2>
+                    <p class="text-slate-500 font-medium">Ready to start your day? Clock in to begin logging hours.</p>
+                </div>
+                <div class="flex gap-4 z-10">
+                    <button id="checkInBtn" onclick="checkIn()" class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none flex items-center gap-2">
+                        <i class="fas fa-sign-in-alt"></i> Shift Start
+                    </button>
+                    <button id="checkOutBtn" onclick="checkOut()" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold shadow-lg shadow-slate-800/30 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> Shift End
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in-up animated-delay-1">
+                <!-- Stat 1 -->
+                <div class="glass-card p-6 group">
+                    <div class="w-12 h-12 rounded-2xl icon-gradient-purple flex items-center justify-center text-xl mb-4 shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="text-3xl font-black text-slate-800 mb-1 tracking-tight" id="s-prod">0%</h3>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Productivity</p>
+                </div>
+                <!-- Stat 2 -->
+                <div class="glass-card p-6 group">
+                    <div class="w-12 h-12 rounded-2xl icon-gradient-primary flex items-center justify-center text-xl mb-4 shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h3 class="text-3xl font-black text-slate-800 mb-1 tracking-tight" id="s-att">0%</h3>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Attendance</p>
+                </div>
+                <!-- Stat 3 -->
+                <div class="glass-card p-6 group">
+                    <div class="w-12 h-12 rounded-2xl icon-gradient-warning flex items-center justify-center text-xl mb-4 shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <h3 class="text-3xl font-black text-slate-800 mb-1 tracking-tight" id="s-pending">0</h3>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pending Tasks</p>
+                </div>
+                <!-- Stat 4 -->
+                <div class="glass-card p-6 group">
+                    <div class="w-12 h-12 rounded-2xl icon-gradient-success flex items-center justify-center text-xl mb-4 shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <h3 class="text-3xl font-black text-slate-800 mb-1 tracking-tight" id="s-completed">0</h3>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Completed</p>
+                </div>
+            </div>
+
+            <!-- Main Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up animated-delay-2">
+                
+                <!-- Left: Attendance Status -->
+                <div class="glass-card p-6 flex flex-col items-center justify-center relative">
+                    <h3 class="text-lg font-bold text-slate-800 w-full mb-8"><i class="fas fa-clock text-indigo-500 mr-2"></i> Current Status</h3>
+                    
+                    <div id="attStatus" class="flex flex-col items-center justify-center w-full">
+                        <!-- Dynamic content injected here -->
+                        <div class="w-28 h-28 rounded-full border-2 border-dashed border-slate-300 att-spin absolute top-20"></div>
+                        <div class="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-4xl mb-4 z-10 relative">
+                            🕐
+                        </div>
+                        <div class="text-center z-10 relative">
+                            <h3 class="text-xl font-bold text-slate-800 mb-1">Loading...</h3>
+                            <p class="text-sm text-slate-500">Checking current state</p>
+                        </div>
+                    </div>
+
+                    <div id="attTimes" class="flex w-full gap-4 mt-8 hidden">
+                        <div class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                            <div class="text-lg font-bold text-slate-800" id="valCheckIn">--:--</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Check In</div>
+                        </div>
+                        <div class="flex-1 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                            <div class="text-lg font-bold text-slate-800" id="valCheckOut">--:--</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Check Out</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle: Performance Chart -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-6"><i class="fas fa-chart-line text-indigo-500 mr-2"></i> Performance Trend</h3>
+                    <div class="w-full h-64" id="perfChart"></div>
+                </div>
+
+                <!-- Right: Active Tasks -->
+                <div class="glass-card p-6 flex flex-col">
+                    <h3 class="text-lg font-bold text-slate-800 mb-6 shrink-0"><i class="fas fa-list-check text-indigo-500 mr-2"></i> Priority Tasks</h3>
+                    <div class="flex-1 overflow-y-auto pr-2 flex flex-col gap-3" id="myTasks">
+                        <div class="text-center text-slate-400 py-10 font-medium text-sm">Loading tasks...</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Custom Remarks Modal -->
+<div class="modal-overlay" id="remarksModal">
+    <div class="modal-content">
+        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-xl mb-4 mx-auto">
+            <i class="fas fa-pen"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 text-center mb-2" id="remarksMessage">Remarks Required</h3>
+        <p class="text-sm text-slate-500 text-center mb-6">Please provide a reason before continuing.</p>
+        
+        <textarea id="remarksInput" class="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none mb-4" placeholder="Enter your reason here..." onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submitRemarks(); }"></textarea>
+        
+        <div class="flex gap-3">
+            <button onclick="closeRemarksModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-colors">Cancel</button>
+            <button onclick="submitRemarks()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-colors flex items-center justify-center gap-2">
+                <i class="fas fa-paper-plane"></i> Submit
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('access_token');
+    if (!token || localStorage.getItem('role') !== 'employee') window.location.href = '/login';
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    document.getElementById('sidebarName').textContent = user.name || 'Employee';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'U')[0].toUpperCase();
+    document.getElementById('sidebarRole').textContent = user.department || 'Staff';
+
+    window.Apex = {
+        chart: { foreColor: '#64748b', toolbar: { show: false }, animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+        grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
+        tooltip: { theme: 'light', style: { fontSize: '13px', fontFamily: 'Inter' } }
+    };
+
+    let perfChart;
+
+    function initCharts() {
+        const opts = {
+            series: [{ name: 'Tasks Completed', type: 'area', data: [2, 4, 3, 5, 2, 6, 4] }], // Dummy initial data
+            chart: { height: 260, type: 'line', background: 'transparent' },
+            stroke: { curve: 'smooth', width: 4 },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.2, opacityTo: 0, stops: [0, 100] } },
+            colors: ['#8b5cf6'],
+            xaxis: { type: 'category', categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], axisBorder: {show:false}, axisTicks:{show:false} },
+            yaxis: { show: false },
+            markers: { size: 0, hover: { sizeOffset: 6 } },
+            dataLabels: { enabled: false }
+        };
+        perfChart = new ApexCharts(document.querySelector("#perfChart"), opts);
+        perfChart.render();
+    }
+
+    function showToast(msg, type='info') {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = `toast ${type}`;
+        t.innerHTML = `<i class="fas fa-${type==='success'?'circle-check':'info-circle'} text-2xl ${type==='success'?'text-emerald-500':'text-indigo-500'}"></i><span class="text-sm font-semibold text-slate-700">${msg}</span>`;
+        c.appendChild(t); setTimeout(()=>t.remove(),4000);
+    }
+    
+    function logout(){localStorage.clear();window.location.href='/login';}
+    
+    async function api(url,method='GET'){
+        const opts={method,headers:{'Authorization':'Bearer '+token}};
+        return fetch(url,opts);
+    }
+
+    async function loadStats() {
+        const r = await api('/api/employee/dashboard-stats');
+        const d = await r.json();
+        
+        document.getElementById('s-prod').textContent = (d.productivity_score||0)+'%';
+        document.getElementById('s-att').textContent = (d.attendance_percentage||0)+'%';
+        document.getElementById('s-pending').textContent = d.pending_tasks || 0;
+        document.getElementById('s-completed').textContent = d.completed_tasks || 0;
+
+        const attEl = document.getElementById('attStatus');
+        const timesEl = document.getElementById('attTimes');
+        const inBtn = document.getElementById('checkInBtn');
+        const outBtn = document.getElementById('checkOutBtn');
+
+        if (!d.checked_in_today) {
+            inBtn.disabled = false; outBtn.disabled = true;
+            attEl.innerHTML = `
+                <div class="w-28 h-28 rounded-full border-2 border-dashed border-amber-200 att-spin absolute top-[72px]"></div>
+                <div class="w-24 h-24 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center text-4xl mb-4 z-10 relative shadow-inner">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="text-center z-10 relative">
+                    <h3 class="text-xl font-bold text-slate-800 mb-1">Not Checked In</h3>
+                    <p class="text-sm text-slate-500">Click Shift Start to begin</p>
+                </div>`;
+            timesEl.style.display = 'none';
+        } else if (d.checked_out) {
+            inBtn.disabled = false; outBtn.disabled = true;
+            let statusHtml = d.is_half_day 
+                ? `<span class="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ml-2 align-middle">Half Day</span>`
+                : '';
+            attEl.innerHTML = `
+                <div class="w-24 h-24 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-4xl mb-4 z-10 relative shadow-inner">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="text-center z-10 relative">
+                    <h3 class="text-xl font-bold text-emerald-600 mb-1">Checked Out ${statusHtml}</h3>
+                    <p class="text-sm text-slate-500">Total hours: <span class="font-bold text-slate-700">${d.working_hours}h</span></p>
+                </div>`;
+            timesEl.style.display = 'flex';
+        } else {
+            inBtn.disabled = true; outBtn.disabled = false;
+            attEl.innerHTML = `
+                <div class="w-28 h-28 rounded-full border-2 border-dashed border-indigo-200 att-spin absolute top-[72px]"></div>
+                <div class="w-24 h-24 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center text-4xl mb-4 z-10 relative shadow-inner">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="text-center z-10 relative">
+                    <h3 class="text-xl font-bold text-indigo-600 mb-1">On Duty</h3>
+                    <p class="text-sm text-slate-500">Logged: <span class="font-bold text-slate-700">${d.working_hours}h</span></p>
+                </div>`;
+            timesEl.style.display = 'flex';
+        }
+        
+        if (d.check_in_time) document.getElementById('valCheckIn').textContent = new Date(d.check_in_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        if (d.check_out_time) document.getElementById('valCheckOut').textContent = new Date(d.check_out_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+        // Fetch chart data (optional integration if backend supports it)
+        try {
+            const cr = await api('/api/analytics/my-stats?days=7');
+            const cd = await cr.json();
+            // Assuming cd has some trend data, or we just rely on dummy for UI
+        } catch(e) {}
+    }
+
+    async function loadTasks() {
+        try {
+            const r = await api('/api/tasks/my');
+            const d = await r.json();
+            const tasks = (d.tasks || []).slice(0, 6);
+            const el = document.getElementById('myTasks');
+            
+            if (!tasks.length) { 
+                el.innerHTML='<div class="text-center text-slate-400 py-10 font-medium text-sm">No active tasks today.</div>'; 
+                return; 
+            }
+            
+            el.innerHTML = tasks.map(t => {
+                let badgeClass = 'bg-slate-100 text-slate-600';
+                if(t.status === 'in_progress') badgeClass = 'bg-indigo-50 text-indigo-600 border border-indigo-200';
+                if(t.status === 'completed') badgeClass = 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+                if(t.status === 'under_review') badgeClass = 'bg-amber-50 text-amber-600 border border-amber-200';
+                
+                return `
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-3 group">
+                    <h4 class="text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">${t.title||'—'}</h4>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${badgeClass}">${(t.status||'pending').replace('_',' ')}</span>
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-50 text-slate-500 border border-slate-100">${t.priority||'medium'} Priority</span>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch(e) {
+            console.error('Failed to load tasks', e);
+        }
+    }
+
+    async function checkIn(remarks = '') {
+        const body = remarks ? JSON.stringify({ remarks }) : '{}';
+        const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+        const r = await fetch('/api/attendance/check-in', { method: 'POST', headers, body });
+        const d = await r.json();
+        
+        if (r.ok) { 
+            showToast('Shift Started successfully!', 'success'); 
+            loadStats(); 
+        } else if (d.error === 'remarks_required') {
+            openRemarksModal(d.message, 'check_in');
+        } else {
+            showToast(d.error || d.message || 'Error', 'error');
+        }
+    }
+
+    async function checkOut(remarks = '') {
+        const body = remarks ? JSON.stringify({ remarks }) : '{}';
+        const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+        const r = await fetch('/api/attendance/check-out', { method: 'POST', headers, body });
+        const d = await r.json();
+        
+        if (r.ok) { 
+            showToast('Shift Ended successfully!', 'success'); 
+            loadStats(); 
+        } else if (d.error === 'remarks_required') {
+            openRemarksModal(d.message, 'check_out');
+        } else {
+            showToast(d.error || d.message || 'Error', 'error');
+        }
+    }
+    
+    let pendingAction = null;
+    function openRemarksModal(message, action) {
+        pendingAction = action;
+        document.getElementById('remarksMessage').textContent = message;
+        document.getElementById('remarksInput').value = '';
+        document.getElementById('remarksModal').classList.add('active');
+    }
+    function closeRemarksModal() {
+        document.getElementById('remarksModal').classList.remove('active');
+        pendingAction = null;
+    }
+    function submitRemarks() {
+        const val = document.getElementById('remarksInput').value.trim();
+        if (!val) {
+            showToast('Remarks cannot be empty!', 'error');
+            return;
+        }
+        const action = pendingAction;
+        closeRemarksModal();
+        if (action === 'check_in') {
+            checkIn(val);
+        } else if (action === 'check_out') {
+            checkOut(val);
+        }
+    }
+
+    initCharts();
+    loadStats(); loadTasks();
+
+    // Realtime Sync
+    const socket = io();
+    socket.on('dashboard_update', (data) => {
+        loadStats(); loadTasks();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Messages — Richa Global Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#0f0f1a;color:#e2e8f0;display:flex;height:100vh;overflow:hidden}
+        :root{--primary:#6366f1;--accent:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1a1a2e;--card2:#16213e;--border:rgba(99,102,241,0.15);--muted:#94a3b8;--bg:#0f0f1a;--chat-me:rgba(99,102,241,0.2);--chat-other:rgba(255,255,255,0.05)}
+        .sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+        .sidebar-brand{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+        .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+        .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:var(--muted)}
+        .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+        .nav-section{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:2px}
+        .nav-item:hover,.nav-item.active{background:rgba(99,102,241,.15);color:var(--primary)}
+        .nav-item i{width:18px;text-align:center}
+        .sidebar-footer{padding:16px 12px}
+        .user-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0}
+        .user-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-role{font-size:11px;color:var(--muted)}
+        .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+        
+        .main{margin-left:260px;flex:1;display:flex;flex-direction:column}
+        .topbar{background:rgba(15,15,26,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+        .topbar-title{font-size:18px;font-weight:700;color:#fff}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:'Inter',sans-serif}
+        .btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+        .btn-outline:hover{background:rgba(99,102,241,0.1)}
+        
+        .chat-container{flex:1;display:flex;overflow:hidden}
+        .chat-sidebar{width:300px;background:var(--card2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+        .chat-search{padding:14px;border-bottom:1px solid var(--border)}
+        .search-input{width:100%;padding:10px 14px 10px 36px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center}
+        .user-list{flex:1;overflow-y:auto;padding:10px}
+        .chat-user{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;cursor:pointer;transition:background .2s;position:relative}
+        .chat-user:hover{background:rgba(99,102,241,0.1)}
+        .chat-user.active{background:rgba(99,102,241,0.2);border:1px solid var(--border)}
+        .status-dot{width:10px;height:10px;border-radius:50%;background:var(--danger);position:absolute;bottom:10px;left:38px;border:2px solid var(--card2)}
+        .status-dot.online{background:var(--success)}
+        .unread-badge{background:var(--primary);color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
+        
+        .chat-area{flex:1;display:flex;flex-direction:column;background:var(--bg);position:relative}
+        .chat-header{padding:16px 24px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+        .chat-messages{flex:1;padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+        .msg{max-width:70%;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.5;position:relative}
+        .msg-time{font-size:10px;color:var(--muted);margin-top:6px;text-align:right}
+        .msg-me{align-self:flex-end;background:var(--chat-me);border:1px solid var(--border);border-bottom-right-radius:4px}
+        .msg-other{align-self:flex-start;background:var(--chat-other);border:1px solid rgba(255,255,255,0.1);border-bottom-left-radius:4px}
+        
+        .chat-input-area{padding:16px 24px;background:var(--card);border-top:1px solid var(--border);display:flex;gap:12px;align-items:center}
+        .chat-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:24px;padding:14px 20px;color:#e2e8f0;font-size:14px;outline:none;font-family:'Inter',sans-serif}
+        .chat-input:focus{border-color:var(--primary)}
+        .send-btn{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:transform .2s;flex-shrink:0}
+        .send-btn:hover{transform:scale(1.05)}
+        .send-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        
+        .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted)}
+        .empty-state i{font-size:48px;margin-bottom:16px;opacity:0.5}
+
+        /* Global Log specific */
+        .log-table{width:100%;border-collapse:collapse}
+        .log-table th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:12px 16px;border-bottom:1px solid var(--border)}
+        .log-table td{padding:14px 16px;font-size:13px;border-bottom:1px solid rgba(99,102,241,.05)}
+        .log-table tr:hover td{background:rgba(99,102,241,.04)}
+        .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(99,102,241,.15);color:var(--primary)}
+        
+        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+        .toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;min-width:280px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:slideIn .3s ease}
+        .toast.success{border-left:4px solid var(--success)}.toast.error{border-left:4px solid var(--danger)}
+        @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+    </style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+
+<nav class="sidebar">
+    <div class="sidebar-brand"><div class="logo">R</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Admin Panel</div></div></div>
+    <div class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a href="/admin/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/admin/employees" class="nav-item"><i class="fas fa-users"></i> Employees</a>
+        <a href="/admin/tasks" class="nav-item"><i class="fas fa-tasks"></i> Tasks</a>
+        <a href="/admin/attendance" class="nav-item"><i class="fas fa-clock"></i> Attendance</a>
+        <div class="nav-section">Insights</div>
+        <a href="/admin/analytics" class="nav-item"><i class="fas fa-chart-line"></i> Analytics</a>
+        <a href="/admin/messages" class="nav-item active"><i class="fas fa-envelope"></i> Messages</a>
+    </div>
+    <div class="sidebar-footer">
+        <div class="user-card"><div class="avatar" id="sidebarAvatar">A</div><div><div class="user-name" id="sidebarName">Admin</div><div class="user-role">Administrator</div></div></div>
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
+</nav>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-title">Messages</div>
+        <button class="btn btn-outline" id="toggleLogBtn" onclick="toggleGlobalLog()">
+            <i class="fas fa-history"></i> View Global Log
+        </button>
+    </div>
+    
+    <div class="chat-container" id="mainChatView">
+        <div class="chat-sidebar">
+            <div class="chat-search">
+                <input type="text" class="search-input" id="searchUsers" placeholder="Search users..." oninput="filterUsers()">
+            </div>
+            <div class="user-list" id="userList">
+                <div style="text-align:center;padding:20px;color:var(--muted)">Loading...</div>
+            </div>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <div class="empty-state">
+                <i class="fas fa-comments"></i>
+                <h2>Select a conversation</h2>
+                <p>Choose an employee from the left menu to start messaging</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="chat-container" id="globalLogView" style="display:none; flex-direction:column; background:var(--bg); overflow-y:auto">
+        <div style="padding: 24px;">
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #fff;">
+                <i class="fas fa-eye" style="color:var(--primary);margin-right:8px"></i> Global Message Log (Admin View)
+            </div>
+            <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Sender</th>
+                            <th>Recipient</th>
+                            <th>Message Content</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <tr><td colspan="5" style="text-align:center;color:var(--muted)">Loading log...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('access_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || localStorage.getItem('role') !== 'admin') window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Admin';
+    document.getElementById('sidebarAvatar').textContent = (user.name||'A')[0].toUpperCase();
+
+    let chatUsers = [];
+    let currentUserId = null;
+    let pollInterval = null;
+    let viewMode = 'chat'; // 'chat' or 'log'
+
+    function showToast(msg, type='info') {
+        const icons={success:'fa-circle-check',error:'fa-circle-xmark',info:'fa-circle-info'};
+        const colors={success:'#10b981',error:'#ef4444',info:'#6366f1'};
+        const c=document.getElementById('toastContainer');const t=document.createElement('div');
+        t.className=`toast ${type}`;t.innerHTML=`<i class="fas ${icons[type]}" style="color:${colors[type]};font-size:18px"></i><span style="font-size:13px">${msg}</span>`;
+        c.appendChild(t);setTimeout(()=>t.remove(),3500);
+    }
+    function logout(){localStorage.clear();window.location.href='/login';}
+    async function api(url,method='GET',body=null){
+        const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}};
+        if(body)opts.body=JSON.stringify(body);return fetch(url,opts);
+    }
+
+    async function loadUsers() {
+        if(viewMode !== 'chat') return;
+        const r = await api('/api/messages/users');
+        if (r.ok) {
+            const d = await r.json();
+            chatUsers = d.users;
+            renderUsers();
+        }
+    }
+
+    function renderUsers() {
+        const q = document.getElementById('searchUsers').value.toLowerCase();
+        const list = document.getElementById('userList');
+        
+        const filtered = chatUsers.filter(u => u.name.toLowerCase().includes(q) || (u.department||'').toLowerCase().includes(q) || u.role.includes(q));
+        if (filtered.length === 0) {
+            list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">No users found</div>';
+            return;
+        }
+
+        list.innerHTML = filtered.map(u => `
+            <div class="chat-user ${u.id === currentUserId ? 'active' : ''}" onclick="selectUser('${u.id}', '${u.name}', '${u.role}')">
+                <div class="avatar" style="position:relative">
+                    ${u.name[0].toUpperCase()}
+                    ${u.role==='employee' ? `<div class="status-dot ${u.is_online ? 'online' : ''}"></div>` : ''}
+                </div>
+                <div style="flex:1;overflow:hidden">
+                    <div class="user-name">${u.name}</div>
+                    <div class="user-role">${u.role === 'admin' ? 'Admin' : u.department || 'Employee'}</div>
+                </div>
+                ${u.unread ? `<div class="unread-badge">${u.unread}</div>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function filterUsers() { renderUsers(); }
+
+    function selectUser(id, name, role) {
+        currentUserId = id;
+        renderUsers();
+        
+        const u = chatUsers.find(x => x.id === id);
+        if (u) u.unread = 0;
+        
+        document.getElementById('chatArea').innerHTML = `
+            <div class="chat-header">
+                <div class="avatar">${name[0].toUpperCase()}</div>
+                <div>
+                    <div style="font-weight:600;color:#fff">${name}</div>
+                    <div style="font-size:11px;color:var(--muted)">${role === 'admin' ? 'Administrator' : 'Employee'}</div>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div style="text-align:center;color:var(--muted)">Loading messages...</div>
+            </div>
+            <form class="chat-input-area" id="chatForm">
+                <input type="text" class="chat-input" id="msgInput" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </form>
+        `;
+
+        document.getElementById('chatForm').addEventListener('submit', sendMessage);
+        loadHistory();
+        
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(() => { loadHistory(false); loadUsers(); }, 3000);
+    }
+
+    async function loadHistory(scroll = true) {
+        if (!currentUserId || viewMode !== 'chat') return;
+        const r = await api(`/api/messages/history/${currentUserId}`);
+        if (r.ok) {
+            const d = await r.json();
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            
+            if (d.messages.length === 0) {
+                container.innerHTML = '<div style="text-align:center;color:var(--muted);margin-top:20px">No messages yet.</div>';
+                return;
+            }
+
+            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+            const myId = user._id || user.id;
+
+            container.innerHTML = d.messages.map(m => {
+                const me = m.sender_id === myId;
+                const time = m.created_at ? new Date(m.created_at).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) : '';
+                return `
+                    <div class="msg ${me ? 'msg-me' : 'msg-other'}">
+                        ${m.message}
+                        <div class="msg-time">${time}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            if (scroll || atBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+    }
+
+    async function sendMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('msgInput');
+        const text = input.value.trim();
+        if (!text || !currentUserId) return;
+        
+        input.value = '';
+        input.focus();
+        
+        const r = await api('/api/messages/send', 'POST', {
+            recipient_id: currentUserId,
+            message: text
+        });
+        
+        if (r.ok) {
+            loadHistory(true);
+        } else {
+            showToast('Failed to send message', 'error');
+        }
+    }
+
+    // Global Log View
+    function toggleGlobalLog() {
+        const btn = document.getElementById('toggleLogBtn');
+        const chatView = document.getElementById('mainChatView');
+        const logView = document.getElementById('globalLogView');
+        
+        if (viewMode === 'chat') {
+            viewMode = 'log';
+            btn.innerHTML = '<i class="fas fa-comment"></i> Back to Chat';
+            chatView.style.display = 'none';
+            logView.style.display = 'flex';
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+            loadGlobalLog();
+            pollInterval = setInterval(loadGlobalLog, 5000);
+        } else {
+            viewMode = 'chat';
+            btn.innerHTML = '<i class="fas fa-history"></i> View Global Log';
+            chatView.style.display = 'flex';
+            logView.style.display = 'none';
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+            loadUsers();
+            if (currentUserId) {
+                loadHistory();
+                pollInterval = setInterval(() => { loadHistory(false); loadUsers(); }, 3000);
+            } else {
+                pollInterval = setInterval(loadUsers, 5000);
+            }
+        }
+    }
+
+    async function loadGlobalLog() {
+        if(viewMode !== 'log') return;
+        const r = await api('/api/messages/global-log');
+        if (r.ok) {
+            const d = await r.json();
+            const tbody = document.getElementById('logTableBody');
+            
+            if (d.messages.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No messages recorded on the platform yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = d.messages.map(m => {
+                const time = m.created_at ? new Date(m.created_at).toLocaleString('en-IN') : '';
+                return `
+                    <tr>
+                        <td style="color:var(--muted);font-size:12px">${time}</td>
+                        <td>
+                            <div style="font-weight:600;color:#fff">${m.sender_name}</div>
+                            <div style="font-size:11px;color:var(--muted)">${m.sender_role}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight:600;color:#fff">${m.recipient_name || 'User'}</div>
+                            <div style="font-size:11px;color:var(--muted)">${m.recipient_role || 'employee'}</div>
+                        </td>
+                        <td style="color:#e2e8f0;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.message.replace(/"/g, '&quot;')}">
+                            ${m.message}
+                        </td>
+                        <td><span class="badge" style="${m.is_read ? 'background:rgba(16,185,129,.15);color:#10b981' : ''}">${m.is_read ? 'Read' : 'Unread'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    // Initial load
+    loadUsers();
+    pollInterval = setInterval(() => { if(!currentUserId && viewMode==='chat') loadUsers(); }, 5000);
+</script>
+</body>
+</html>

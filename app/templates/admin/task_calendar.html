@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Task Calendar — Richa Global Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--primary:#6366f1;--accent:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1a1a2e;--card2:#16213e;--border:rgba(99,102,241,0.15);--muted:#94a3b8;--bg:#0f0f1a}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:#e2e8f0;display:flex;height:100vh;overflow:hidden}
+        
+        .sidebar{width:260px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+        .sidebar-brand{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+        .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+        .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:var(--muted)}
+        .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;margin-bottom:2px}
+        .nav-item:hover,.nav-item.active{background:rgba(99,102,241,.15);color:var(--primary)}
+        
+        .main{flex:1;display:flex;flex-direction:column;min-width:0}
+        .topbar{background:rgba(15,15,26,.95);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:16px}
+        .topbar-title{font-size:20px;font-weight:700;color:#fff;flex:1}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none;color:#fff}
+        .btn-outline{background:var(--card);border:1px solid var(--border);color:var(--muted)}.btn-outline:hover{color:var(--primary);border-color:var(--primary)}
+        
+        .calendar-wrapper{flex:1;padding:24px 28px;overflow-y:auto}
+        .calendar-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;height:100%}
+        
+        /* FullCalendar Customization */
+        .fc{font-family:'Inter',sans-serif}
+        .fc-theme-standard td, .fc-theme-standard th{border-color:var(--border)!important}
+        .fc .fc-toolbar-title{font-size:18px;font-weight:700;color:#fff}
+        .fc .fc-button-primary{background:var(--card2)!important;border:1px solid var(--border)!important;color:var(--muted)!important;text-transform:capitalize!important}
+        .fc .fc-button-primary:hover{background:var(--primary)!important;color:#fff!important;border-color:var(--primary)!important}
+        .fc .fc-button-active{background:var(--primary)!important;color:#fff!important;border-color:var(--primary)!important}
+        .fc-col-header-cell-cushion{color:#e2e8f0;font-weight:600;padding:12px 0!important}
+        .fc-daygrid-day-number{color:#94a3b8;font-weight:500;padding:8px!important}
+        .fc-day-today{background:rgba(99,102,241,.05)!important}
+        .fc-event{border:none!important;border-radius:6px!important;padding:3px 6px!important;font-size:11px!important;font-weight:600!important;cursor:pointer;transition:transform .2s}
+        .fc-event:hover{transform:scale(1.02);z-index:9}
+        
+        /* Event Priorities */
+        .priority-high{background:var(--danger)!important;color:#fff!important}
+        .priority-medium{background:var(--warning)!important;color:#1a1a2e!important}
+        .priority-low{background:var(--success)!important;color:#fff!important}
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="sidebar-brand"><div class="logo">R</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Admin Panel</div></div></div>
+    <div class="sidebar-nav">
+        <a href="/admin/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/admin/employees" class="nav-item"><i class="fas fa-users"></i> Employees</a>
+        <a href="/admin/tasks" class="nav-item active"><i class="fas fa-tasks"></i> Tasks</a>
+    </div>
+</nav>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-title">Calendar View</div>
+        <a href="/admin/tasks" class="btn btn-outline"><i class="fas fa-list"></i> List View</a>
+        <a href="/admin/tasks/kanban" class="btn btn-outline"><i class="fas fa-columns"></i> Kanban</a>
+    </div>
+    
+    <div class="calendar-wrapper">
+        <div class="calendar-card">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('access_token');
+    if(!token || localStorage.getItem('role') !== 'admin') window.location.href = '/login';
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        const r = await fetch('/api/tasks/',{headers:{'Authorization':'Bearer '+token}});
+        const data = await r.json();
+        const events = (data.tasks||[]).filter(t=>t.due_date).map(t=>{
+            return {
+                id: t._id,
+                title: t.title,
+                start: t.due_date,
+                classNames: [`priority-${t.priority||'medium'}`],
+                url: `/admin/tasks/${t._id}` // click to go to detail
+            };
+        });
+
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            events: events,
+            eventClick: function(info) {
+                info.jsEvent.preventDefault(); // don't let the browser navigate normally
+                if (info.event.url) window.location.href = info.event.url;
+            },
+            height: '100%',
+            contentHeight: 'auto'
+        });
+        calendar.render();
+    });
+</script>
+</body>
+</html>

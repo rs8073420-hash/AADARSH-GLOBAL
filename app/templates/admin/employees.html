@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Employees — Richa Global Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#0f0f1a;color:#e2e8f0;display:flex}
+        :root{--primary:#6366f1;--accent:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1a1a2e;--card2:#16213e;--border:rgba(99,102,241,0.15);--muted:#94a3b8;--bg:#0f0f1a}
+        .sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+        .sidebar-brand{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+        .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+        .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:var(--muted)}
+        .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+        .nav-section{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all 0.2s;margin-bottom:2px}
+        .nav-item:hover,.nav-item.active{background:rgba(99,102,241,0.15);color:var(--primary)}
+        .nav-item i{width:18px;text-align:center}
+        .sidebar-footer{padding:16px 12px}
+        .user-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
+        .user-name{font-size:13px;font-weight:600;color:#fff}.user-role{font-size:11px;color:var(--muted)}
+        .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s}
+        .logout-btn:hover{background:rgba(239,68,68,0.2)}
+        .main{margin-left:260px;flex:1;min-height:100vh}
+        .topbar{position:sticky;top:0;background:rgba(15,15,26,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;z-index:90}
+        .topbar-title{font-size:18px;font-weight:700;color:#fff}
+        .content{padding:28px}
+        .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+        .search-box{position:relative;flex:1;min-width:220px}
+        .search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px}
+        .search-input{width:100%;padding:9px 14px 9px 36px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;font-family:'Inter',sans-serif;transition:border-color .2s}
+        .search-input:focus{border-color:var(--primary)}
+        .search-input::placeholder{color:var(--muted)}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:'Inter',sans-serif}
+        .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+        .btn-danger{background:var(--danger);color:#fff}.btn-sm{padding:6px 12px;font-size:12px}
+        .btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+        .btn-success{background:var(--success);color:#fff}
+        .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px}
+        .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+        .card-title{font-size:15px;font-weight:600;color:#fff}
+        .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+        .badge-success{background:rgba(16,185,129,.15);color:#10b981}
+        .badge-danger{background:rgba(239,68,68,.15);color:#ef4444}
+        table{width:100%;border-collapse:collapse}
+        th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;border-bottom:1px solid var(--border)}
+        td{padding:12px 14px;font-size:13px;border-bottom:1px solid rgba(99,102,241,.05)}
+        tr:last-child td{border-bottom:none}tr:hover td{background:rgba(99,102,241,.04)}
+        .emp-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;margin-right:10px}
+        .emp-name-wrap{display:flex;align-items:center}
+        .emp-info-name{font-size:13px;font-weight:600;color:#fff}
+        .emp-info-id{font-size:11px;color:var(--muted)}
+        .action-btns{display:flex;gap:6px}
+        .icon-btn{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:12px;transition:all .2s}
+        .icon-btn-edit{background:rgba(99,102,241,.15);color:var(--primary)}.icon-btn-edit:hover{background:var(--primary);color:#fff}
+        .icon-btn-del{background:rgba(239,68,68,.15);color:var(--danger)}.icon-btn-del:hover{background:var(--danger);color:#fff}
+        .icon-btn-toggle{background:rgba(245,158,11,.15);color:var(--warning)}.icon-btn-toggle:hover{background:var(--warning);color:#fff}
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.active{display:flex}
+        .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+        .modal-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+        .close-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;transition:color .2s}
+        .close-btn:hover{color:#fff}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        .form-group{margin-bottom:0}
+        .form-label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+        .form-control{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif}
+        .form-control:focus{border-color:var(--primary)}
+        .form-full{grid-column:1/-1}
+        .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+        .toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;min-width:280px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:slideIn .3s ease}
+        .toast.success{border-left:4px solid var(--success)}.toast.error{border-left:4px solid var(--danger)}.toast.info{border-left:4px solid var(--primary)}
+        @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+        .pagination{display:flex;align-items:center;gap:8px;margin-top:20px;justify-content:flex-end}
+        .page-btn{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;font-weight:600;background:var(--card2);border:1px solid var(--border);color:var(--muted);transition:all .2s}
+        .page-btn:hover,.page-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .total-count{font-size:13px;color:var(--muted);margin-right:auto}
+    </style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="modal-overlay" id="empModal">
+    <div class="modal">
+        <div class="modal-title">
+            <span id="modalTitle">Add Employee</span>
+            <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="empForm">
+            <div class="form-grid">
+                <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="f-name" class="form-control" placeholder="John Doe" required></div>
+                <div class="form-group"><label class="form-label">Employee ID *</label><input type="text" id="f-emp-id" class="form-control" placeholder="EMP001" required></div>
+                <div class="form-group"><label class="form-label">Mobile *</label><input type="text" id="f-mobile" class="form-control" placeholder="9876543210" required></div>
+                <div class="form-group"><label class="form-label">Email</label><input type="email" id="f-email" class="form-control" placeholder="email@company.com"></div>
+                <div class="form-group"><label class="form-label">Department</label><input type="text" id="f-dept" class="form-control" placeholder="Sales"></div>
+                <div class="form-group"><label class="form-label">Designation</label><input type="text" id="f-desig" class="form-control" placeholder="Manager"></div>
+                <div class="form-group"><label class="form-label">Join Date</label><input type="date" id="f-join" class="form-control"></div>
+                <div class="form-group"><label class="form-label">Password <span id="pwHint" style="font-size:10px;color:var(--muted)">(leave blank to keep)</span></label><input type="password" id="f-password" class="form-control" placeholder="Password"></div>
+                <div class="form-group form-full"><label class="form-label">Address</label><input type="text" id="f-address" class="form-control" placeholder="Full address"></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <div class="logo">R</div>
+        <div><div class="brand-name">Richa Global</div><div class="brand-sub">Admin Panel</div></div>
+    </div>
+    <div class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <a href="/admin/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/admin/employees" class="nav-item active"><i class="fas fa-users"></i> Employees</a>
+        <a href="/admin/tasks" class="nav-item"><i class="fas fa-tasks"></i> Tasks</a>
+        <a href="/admin/attendance" class="nav-item"><i class="fas fa-clock"></i> Attendance</a>
+        <div class="nav-section">Insights</div>
+        <a href="/admin/analytics" class="nav-item"><i class="fas fa-chart-line"></i> Analytics</a>
+        <a href="/admin/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages</a>
+    </div>
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="avatar" id="sidebarAvatar">A</div>
+            <div><div class="user-name" id="sidebarName">Admin</div><div class="user-role">Administrator</div></div>
+        </div>
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
+</nav>
+
+<div class="main">
+    <div class="topbar">
+        <div class="topbar-title">Employee Management</div>
+        <button class="btn btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Employee</button>
+    </div>
+    <div class="content">
+        <div class="toolbar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search by name, ID, mobile..." oninput="filterEmployees()">
+            </div>
+            <select class="search-input" id="deptFilter" style="max-width:180px" onchange="filterEmployees()">
+                <option value="">All Departments</option>
+            </select>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">All Employees</div>
+                <span class="total-count" id="empCount">Loading...</span>
+            </div>
+            <div style="overflow-x:auto">
+                <table>
+                    <thead><tr><th>Employee</th><th>Mobile</th><th>Department</th><th>Designation</th><th>Join Date</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="empTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('access_token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || localStorage.getItem('role') !== 'admin') window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Admin';
+    document.getElementById('sidebarAvatar').textContent = (user.name||'A')[0].toUpperCase();
+
+    let allEmployees = [], editId = null;
+
+    function showToast(msg, type='info') {
+        const icons={success:'fa-circle-check',error:'fa-circle-xmark',info:'fa-circle-info'};
+        const colors={success:'#10b981',error:'#ef4444',info:'#6366f1'};
+        const c=document.getElementById('toastContainer');
+        const t=document.createElement('div');
+        t.className=`toast ${type}`;
+        t.innerHTML=`<i class="fas ${icons[type]}" style="color:${colors[type]};font-size:18px"></i><span style="font-size:13px">${msg}</span>`;
+        c.appendChild(t);setTimeout(()=>t.remove(),3500);
+    }
+    function logout(){localStorage.clear();window.location.href='/login';}
+
+    async function api(url, method='GET', body=null) {
+        const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}};
+        if(body) opts.body=JSON.stringify(body);
+        const r=await fetch(url,opts);return r;
+    }
+
+    async function loadEmployees() {
+        const r = await api('/api/admin/employees');
+        const data = await r.json();
+        allEmployees = data.employees || [];
+        const depts = [...new Set(allEmployees.map(e=>e.department).filter(Boolean))];
+        const df = document.getElementById('deptFilter');
+        df.innerHTML = '<option value="">All Departments</option>' + depts.map(d=>`<option value="${d}">${d}</option>`).join('');
+        renderTable(allEmployees);
+    }
+
+    function renderTable(employees) {
+        document.getElementById('empCount').textContent = `${employees.length} employees`;
+        const tbody = document.getElementById('empTable');
+        if (!employees.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:40px">No employees found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = employees.map(e => `
+            <tr>
+                <td><div class="emp-name-wrap"><div class="emp-avatar">${(e.name||'?')[0].toUpperCase()}</div><div><div class="emp-info-name">${e.name||'—'} <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${e.is_online?'#10b981':'#ef4444'};margin-left:4px" title="${e.is_online?'Checked In':'Checked Out'}"></span></div><div class="emp-info-id">${e.employee_id||'—'}</div></div></div></td>
+                <td>${e.mobile||'—'}</td>
+                <td>${e.department||'—'}</td>
+                <td>${e.designation||'—'}</td>
+                <td>${e.join_date||'—'}</td>
+                <td><span class="badge ${e.is_active?'badge-success':'badge-danger'}">${e.is_active?'Active':'Inactive'}</span></td>
+                <td><div class="action-btns">
+                    <button class="icon-btn icon-btn-edit" onclick="openEditModal('${e._id}')" title="Edit"><i class="fas fa-pen"></i></button>
+                    <button class="icon-btn icon-btn-toggle" onclick="toggleActive('${e._id}',${!e.is_active})" title="${e.is_active?'Deactivate':'Activate'}"><i class="fas fa-power-off"></i></button>
+                    <button class="icon-btn icon-btn-del" onclick="deleteEmp('${e._id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </div></td>
+            </tr>`).join('');
+    }
+
+    function filterEmployees() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const dept = document.getElementById('deptFilter').value;
+        const filtered = allEmployees.filter(e => {
+            const matchSearch = !q || (e.name||'').toLowerCase().includes(q) || (e.employee_id||'').toLowerCase().includes(q) || (e.mobile||'').includes(q);
+            const matchDept = !dept || e.department === dept;
+            return matchSearch && matchDept;
+        });
+        renderTable(filtered);
+    }
+
+    function openAddModal() {
+        editId = null;
+        document.getElementById('modalTitle').textContent = 'Add Employee';
+        document.getElementById('pwHint').style.display = 'none';
+        document.getElementById('empForm').reset();
+        document.getElementById('f-password').required = true;
+        document.getElementById('empModal').classList.add('active');
+    }
+
+    function openEditModal(id) {
+        const emp = allEmployees.find(e => e._id === id);
+        if (!emp) return;
+        editId = id;
+        document.getElementById('modalTitle').textContent = 'Edit Employee';
+        document.getElementById('pwHint').style.display = 'inline';
+        document.getElementById('f-name').value = emp.name || '';
+        document.getElementById('f-emp-id').value = emp.employee_id || '';
+        document.getElementById('f-mobile').value = emp.mobile || '';
+        document.getElementById('f-email').value = emp.email || '';
+        document.getElementById('f-dept').value = emp.department || '';
+        document.getElementById('f-desig').value = emp.designation || '';
+        document.getElementById('f-join').value = emp.join_date || '';
+        document.getElementById('f-address').value = emp.address || '';
+        document.getElementById('f-password').value = '';
+        document.getElementById('f-password').required = false;
+        document.getElementById('empModal').classList.add('active');
+    }
+
+    function closeModal() { document.getElementById('empModal').classList.remove('active'); }
+
+    document.getElementById('empForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            name: document.getElementById('f-name').value,
+            employee_id: document.getElementById('f-emp-id').value,
+            mobile: document.getElementById('f-mobile').value,
+            email: document.getElementById('f-email').value,
+            department: document.getElementById('f-dept').value,
+            designation: document.getElementById('f-desig').value,
+            join_date: document.getElementById('f-join').value,
+            address: document.getElementById('f-address').value,
+        };
+        const pw = document.getElementById('f-password').value;
+        if (pw) data.password = pw;
+
+        const url = editId ? `/api/admin/employees/${editId}` : '/api/admin/employees';
+        const method = editId ? 'PUT' : 'POST';
+        const r = await api(url, method, data);
+        const resp = await r.json();
+        if (r.ok) {
+            showToast(editId ? 'Employee updated!' : 'Employee created!', 'success');
+            closeModal(); loadEmployees();
+        } else {
+            showToast(resp.error || 'Error occurred', 'error');
+        }
+    });
+
+    async function toggleActive(id, status) {
+        const r = await api(`/api/admin/employees/${id}/toggle-active`, 'POST', {is_active: status});
+        if (r.ok) { showToast(status ? 'Employee activated' : 'Employee deactivated', 'success'); loadEmployees(); }
+    }
+
+    async function deleteEmp(id) {
+        if (!confirm('Delete this employee? This cannot be undone.')) return;
+        const r = await api(`/api/admin/employees/${id}`, 'DELETE');
+        if (r.ok) { showToast('Employee deleted', 'success'); loadEmployees(); }
+    }
+
+    loadEmployees();
+</script>
+</body>
+</html>
