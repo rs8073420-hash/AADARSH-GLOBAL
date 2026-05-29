@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Sticky Notes — Employee{% endblock %}
+
+{% block extra_css %}
+<style>
+    .glass { background: rgba(26,26,46,0.8); backdrop-filter: blur(12px); border: 1px solid var(--border); }
+    #notesBoard { position: relative; width: 100%; height: calc(100vh - 150px); overflow: hidden; background: radial-gradient(circle at center, var(--card2) 0%, var(--bg) 100%); border-radius: 14px; border: 1px solid var(--border); }
+    
+    .sticky-note { 
+        position: absolute; width: 220px; min-height: 220px; padding: 16px; 
+        border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        cursor: grab; display: flex; flex-direction: column;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .sticky-note:active { cursor: grabbing; opacity: 0.9; }
+    .sticky-note:hover { transform: scale(1.02); z-index: 10; box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+    
+    .note-header { display: flex; justify-content: space-between; margin-bottom: 10px; cursor: move; }
+    .note-content { flex: 1; outline: none; font-size: 14px; line-height: 1.5; color: #1e293b; font-family: 'Comic Sans MS', 'Inter', sans-serif; resize: none; border: none; background: transparent; }
+    
+    .btn-icon { background: rgba(0,0,0,0.1); border: none; width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(0,0,0,0.6); transition: all 0.2s; }
+    .btn-icon:hover { background: rgba(0,0,0,0.2); color: rgba(0,0,0,0.8); }
+    
+    /* Colors */
+    .note-yellow { background: linear-gradient(135deg, #fef08a, #fde047); }
+    .note-green { background: linear-gradient(135deg, #bbf7d0, #86efac); }
+    .note-blue { background: linear-gradient(135deg, #bfdbfe, #93c5fd); }
+    .note-pink { background: linear-gradient(135deg, #fbcfe8, #f9a8d4); }
+    .note-purple { background: linear-gradient(135deg, #e9d5ff, #d8b4fe); }
+    .note-orange { background: linear-gradient(135deg, #fed7aa, #fdba74); }
+
+    .color-picker { position: absolute; bottom: 10px; left: 16px; display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+    .sticky-note:hover .color-picker { opacity: 1; }
+    .color-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.2); }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include 'components/employee_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-sticky-note" style="margin-right:8px; color:var(--primary);"></i> Sticky Notes</div>
+        <div class="topbar-actions">
+            <button class="btn btn-primary btn-sm" onclick="createNote()"><i class="fas fa-plus"></i> New Note</button>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div id="notesBoard">
+            <!-- Notes injected here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    if (!token) window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Employee';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'E')[0].toUpperCase();
+
+    const board = document.getElementById('notesBoard');
+    const colors = ['yellow', 'green', 'blue', 'pink', 'purple', 'orange'];
+    let zIndexCounter = 100;
+    let dragItem = null;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    async function loadNotes() {
+        try {
+            const res = await fetch('/api/notes', { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            board.innerHTML = '';
+            
+            if(data.notes && data.notes.length) {
+                data.notes.forEach(note => renderNote(note));
+            } else {
+                board.innerHTML = `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:var(--muted); font-size:16px; text-align:center;"><i class="fas fa-sticky-note" style="font-size:48px; opacity:0.2; margin-bottom:16px; display:block;"></i>Click "New Note" to create your first sticky note</div>`;
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    function renderNote(note) {
+        // Remove empty state if present
+        if(board.innerHTML.includes('Click "New Note"')) board.innerHTML = '';
+
+        const div = document.createElement('div');
+        div.className = `sticky-note note-${note.color}`;
+        div.id = `note-${note._id}`;
+        div.style.left = `${note.position_x}px`;
+        div.style.top = `${note.position_y}px`;
+        div.style.zIndex = zIndexCounter++;
+        
+        const colorsHtml = colors.map(c => `<div class="color-dot" style="background:var(--${c}-bg, ${getColorHex(c)})" onclick="changeColor('${note._id}', '${c}')"></div>`).join('');
+
+        div.innerHTML = `
+            <div class="note-header" onmousedown="startDrag(event, '${note._id}')">
+                <i class="fas fa-thumbtack" style="color:rgba(0,0,0,0.2); transform:rotate(45deg);"></i>
+                <button class="btn-icon" onclick="deleteNote('${note._id}')"><i class="fas fa-times"></i></button>
+            </div>
+            <textarea class="note-content" onchange="updateNoteContent('${note._id}', this.value)">${note.content}</textarea>
+            <div class="color-picker">${colorsHtml}</div>
+        `;
+        board.appendChild(div);
+    }
+
+    function getColorHex(c) {
+        const m = {yellow:'#fde047', green:'#86efac', blue:'#93c5fd', pink:'#f9a8d4', purple:'#d8b4fe', orange:'#fdba74'};
+        return m[c];
+    }
+
+    async function createNote() {
+        const body = {
+            content: "New Note",
+            color: colors[Math.floor(Math.random() * colors.length)],
+            position_x: Math.floor(Math.random() * 200) + 50,
+            position_y: Math.floor(Math.random() * 200) + 50
+        };
+
+        try {
+            const res = await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if(res.ok) loadNotes();
+        } catch(e) {}
+    }
+
+    async function updateNoteContent(id, content) {
+        try {
+            await fetch(`/api/notes/${id}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+        } catch(e) {}
+    }
+
+    async function changeColor(id, color) {
+        try {
+            await fetch(`/api/notes/${id}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ color })
+            });
+            const noteEl = document.getElementById(`note-${id}`);
+            if(noteEl) {
+                noteEl.className = `sticky-note note-${color}`;
+            }
+        } catch(e) {}
+    }
+
+    async function deleteNote(id) {
+        const el = document.getElementById(`note-${id}`);
+        if(el) el.style.transform = 'scale(0)';
+        setTimeout(async () => {
+            try {
+                await fetch(`/api/notes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if(el) el.remove();
+                if(board.children.length === 0) loadNotes(); // Reload empty state
+            } catch(e) {}
+        }, 200);
+    }
+
+    // Drag Logic
+    function startDrag(e, id) {
+        if(e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'i') return;
+        dragItem = document.getElementById(`note-${id}`);
+        dragItem.style.zIndex = zIndexCounter++;
+        
+        const rect = dragItem.getBoundingClientRect();
+        const boardRect = board.getBoundingClientRect();
+        
+        xOffset = e.clientX - rect.left + boardRect.left;
+        yOffset = e.clientY - rect.top + boardRect.top;
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+    }
+
+    function drag(e) {
+        if (!dragItem) return;
+        e.preventDefault();
+        
+        const boardRect = board.getBoundingClientRect();
+        let x = e.clientX - boardRect.left - (xOffset - boardRect.left);
+        let y = e.clientY - boardRect.top - (yOffset - boardRect.top);
+        
+        // Bounds
+        if(x < 0) x = 0;
+        if(y < 0) y = 0;
+        if(x + dragItem.offsetWidth > boardRect.width) x = boardRect.width - dragItem.offsetWidth;
+        if(y + dragItem.offsetHeight > boardRect.height) y = boardRect.height - dragItem.offsetHeight;
+
+        dragItem.style.left = `${x}px`;
+        dragItem.style.top = `${y}px`;
+    }
+
+    async function stopDrag() {
+        if (!dragItem) return;
+        const id = dragItem.id.split('-')[1];
+        const x = parseInt(dragItem.style.left);
+        const y = parseInt(dragItem.style.top);
+        
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        dragItem = null;
+
+        // Save new pos
+        try {
+            await fetch(`/api/notes/${id}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ position_x: x, position_y: y })
+            });
+        } catch(e) {}
+    }
+
+    loadNotes();
+</script>
+{% endblock %}

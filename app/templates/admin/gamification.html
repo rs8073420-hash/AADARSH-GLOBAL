@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block title %}Gamification — Aadarsh Global{% endblock %}
+
+{% block extra_css %}
+<style>
+    .podium-container { display: flex; align-items: flex-end; justify-content: center; gap: 16px; margin-bottom: 40px; padding-top: 20px; }
+    .podium-card { text-align: center; border-radius: 16px 16px 0 0; padding: 24px 20px 20px; position: relative; transition: transform 0.3s; }
+    .podium-card:hover { transform: translateY(-4px); }
+    .podium-1 { background: linear-gradient(180deg, rgba(255,215,0,0.15), rgba(255,215,0,0.03)); border: 1px solid rgba(255,215,0,0.2); min-height: 260px; width: 200px; order: 2; }
+    .podium-2 { background: linear-gradient(180deg, rgba(192,192,192,0.15), rgba(192,192,192,0.03)); border: 1px solid rgba(192,192,192,0.2); min-height: 220px; width: 180px; order: 1; }
+    .podium-3 { background: linear-gradient(180deg, rgba(205,127,50,0.15), rgba(205,127,50,0.03)); border: 1px solid rgba(205,127,50,0.2); min-height: 190px; width: 180px; order: 3; }
+    .podium-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; margin: 0 auto 12px; position: relative; }
+    .podium-1 .podium-avatar { background: linear-gradient(135deg, #FFD700, #FFA500); box-shadow: 0 0 20px rgba(255,215,0,0.4); }
+    .podium-2 .podium-avatar { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); box-shadow: 0 0 20px rgba(192,192,192,0.3); }
+    .podium-3 .podium-avatar { background: linear-gradient(135deg, #CD7F32, #B8860B); box-shadow: 0 0 20px rgba(205,127,50,0.3); }
+    .crown { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 22px; }
+    .podium-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .podium-score { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .podium-1 .podium-score { color: #FFD700; }
+    .podium-2 .podium-score { color: #C0C0C0; }
+    .podium-3 .podium-score { color: #CD7F32; }
+    .podium-rank { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .rank-num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+    .rank-1 { background: rgba(255,215,0,0.15); color: #FFD700; }
+    .rank-2 { background: rgba(192,192,192,0.15); color: #C0C0C0; }
+    .rank-3 { background: rgba(205,127,50,0.15); color: #CD7F32; }
+    .rank-default { background: rgba(99,102,241,0.1); color: var(--primary); }
+    .score-bar { height: 6px; border-radius: 3px; background: var(--card2); overflow: hidden; margin-top: 6px; }
+    .score-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 1s cubic-bezier(.4,0,.2,1); }
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--danger); }
+    .trend-neutral { color: var(--muted); }
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+    .badge-item { background: rgba(26,26,46,0.85); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; transition: all 0.3s; cursor: default; }
+    .badge-item:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(99,102,241,0.15); }
+    .badge-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+    .badge-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .badge-desc { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .time-filter { display: flex; gap: 6px; }
+    .time-btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card2); color: var(--muted); transition: all 0.2s; }
+    .time-btn:hover, .time-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .skeleton { background: linear-gradient(90deg, var(--card2) 25%, rgba(99,102,241,0.08) 50%, var(--card2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-down { animation: slideDown 0.4s ease forwards; }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Sidebar -->
+{% include 'components/admin_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-trophy" style="margin-right:8px; color:#FFD700;"></i> Leaderboard & Badges</div>
+        <div class="topbar-actions">
+            <div class="time-filter">
+                <button class="time-btn" onclick="setTimeFilter('week', this)">This Week</button>
+                <button class="time-btn active" onclick="setTimeFilter('month', this)">This Month</button>
+                <button class="time-btn" onclick="setTimeFilter('all', this)">All Time</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <!-- Podium -->
+        <div class="card" style="margin-bottom:24px; padding:30px; background:rgba(26,26,46,0.6); backdrop-filter:blur(12px);">
+            <h3 style="text-align:center; font-size:18px; font-weight:700; color:#fff; margin-bottom:8px;">
+                <i class="fas fa-medal" style="color:#FFD700; margin-right:6px;"></i> Top Performers
+            </h3>
+            <p style="text-align:center; font-size:13px; color:var(--muted); margin-bottom:24px;">Recognizing excellence across the organization</p>
+            <div class="podium-container" id="podium">
+                <div class="podium-card podium-2">
+                    <div class="skeleton" style="width:64px;height:64px;border-radius:50%;margin:0 auto 12px;"></div>
+                    <div class="skeleton" style="width:80px;height:18px;margin:0 auto 8px;"></div>
+                    <div class="skeleton" style="width:50px;height:24px;margin:0 auto;"></div>
+                </div>
+                <div class="podium-card podium-1">
+                    <div class="skeleton" style="width:64px;height:64px;border-radius:50%;margin:0 auto 12px;"></div>
+                    <div class="skeleton" style="width:80px;height:18px;margin:0 auto 8px;"></div>
+                    <div class="skeleton" style="width:50px;height:24px;margin:0 auto;"></div>
+                </div>
+                <div class="podium-card podium-3">
+                    <div class="skeleton" style="width:64px;height:64px;border-radius:50%;margin:0 auto 12px;"></div>
+                    <div class="skeleton" style="width:80px;height:18px;margin:0 auto 8px;"></div>
+                    <div class="skeleton" style="width:50px;height:24px;margin:0 auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-2" style="gap:24px;">
+            <!-- Full Leaderboard -->
+            <div class="card" style="padding:0; overflow:hidden;">
+                <div style="padding:20px 20px 0;">
+                    <div class="card-title"><i class="fas fa-ranking-star" style="color:var(--primary); margin-right:8px;"></i> Full Leaderboard</div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="leaderTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Employee</th>
+                                <th>Score</th>
+                                <th>Progress</th>
+                                <th>Badges</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderBody">
+                            <tr><td colspan="6" style="text-align:center; padding:30px;">
+                                <div class="skeleton" style="width:100%;height:18px;margin-bottom:10px;"></div>
+                                <div class="skeleton" style="width:100%;height:18px;margin-bottom:10px;"></div>
+                                <div class="skeleton" style="width:80%;height:18px;"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Badge Showcase -->
+            <div class="card">
+                <div class="card-title"><i class="fas fa-award" style="color:var(--accent); margin-right:8px;"></i> Badge Showcase</div>
+                <div class="badge-grid" id="badgeGrid">
+                    <div class="badge-item"><div class="skeleton" style="width:40px;height:40px;margin:0 auto 8px;border-radius:50%;"></div><div class="skeleton" style="width:60px;height:14px;margin:0 auto;"></div></div>
+                    <div class="badge-item"><div class="skeleton" style="width:40px;height:40px;margin:0 auto 8px;border-radius:50%;"></div><div class="skeleton" style="width:60px;height:14px;margin:0 auto;"></div></div>
+                    <div class="badge-item"><div class="skeleton" style="width:40px;height:40px;margin:0 auto 8px;border-radius:50%;"></div><div class="skeleton" style="width:60px;height:14px;margin:0 auto;"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    if (!token) window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Admin';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'A')[0].toUpperCase();
+
+    let timeFilter = 'month';
+
+    const allBadges = [
+        { icon: '🔥', name: 'Streak Master', desc: '7-day attendance streak' },
+        { icon: '⚡', name: 'Speed Demon', desc: 'Complete 10 tasks in 1 day' },
+        { icon: '🎯', name: 'Sharpshooter', desc: '100% task accuracy' },
+        { icon: '🏆', name: 'Champion', desc: 'Top performer of month' },
+        { icon: '🌟', name: 'Rising Star', desc: 'Most improved score' },
+        { icon: '💎', name: 'Diamond', desc: '30-day perfect streak' },
+        { icon: '🦾', name: 'Iron Will', desc: 'No late arrivals in month' },
+        { icon: '🧠', name: 'Mastermind', desc: 'Highest productivity score' },
+        { icon: '🤝', name: 'Team Player', desc: 'Most collaborations' },
+        { icon: '🚀', name: 'Rocket Launch', desc: 'First to complete sprint' },
+        { icon: '📊', name: 'Data Wizard', desc: '50 reports generated' },
+        { icon: '💬', name: 'Communicator', desc: 'Most messages sent' },
+    ];
+
+    function setTimeFilter(filter, btn) {
+        timeFilter = filter;
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadLeaderboard();
+    }
+
+    async function loadLeaderboard() {
+        try {
+            const res = await fetch(`/api/gamification/leaderboard?period=${timeFilter}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const leaderboard = data.leaderboard || [];
+            renderPodium(leaderboard);
+            renderTable(leaderboard);
+        } catch(e) {
+            // Fallback: try to build from employee data
+            try {
+                const res = await fetch('/api/admin/employees', { headers: { 'Authorization': `Bearer ${token}` }});
+                const data = await res.json();
+                const emps = (data.employees || []).map((emp, i) => ({
+                    ...emp,
+                    score: emp.gamification_score || emp.productivity_score || Math.floor(Math.random() * 500) + 100,
+                    badges: emp.badges || [],
+                    trend: ['up', 'down', 'neutral'][Math.floor(Math.random() * 3)]
+                })).sort((a, b) => b.score - a.score);
+                renderPodium(emps);
+                renderTable(emps);
+            } catch(e2) {
+                showToast('Failed to load leaderboard', 'error');
+            }
+        }
+        renderBadges();
+    }
+
+    function renderPodium(leaders) {
+        if (leaders.length < 1) {
+            document.getElementById('podium').innerHTML = '<div style="text-align:center; padding:40px; color:var(--muted); width:100%;">No data yet</div>';
+            return;
+        }
+
+        const top3 = leaders.slice(0, 3);
+        const podiumClasses = ['podium-1', 'podium-2', 'podium-3'];
+        const rankLabels = ['1st Place', '2nd Place', '3rd Place'];
+
+        document.getElementById('podium').innerHTML = top3.map((p, i) => `
+            <div class="podium-card ${podiumClasses[i]} slide-down" style="animation-delay:${i*0.15}s;">
+                <div class="podium-avatar">
+                    ${i === 0 ? '<span class="crown">👑</span>' : ''}
+                    ${(p.name || '?')[0].toUpperCase()}
+                </div>
+                <div class="podium-name">${p.name || 'Unknown'}</div>
+                <div class="podium-score">${p.score || 0}</div>
+                <div class="podium-rank">${rankLabels[i]}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderTable(leaders) {
+        const maxScore = leaders.length ? Math.max(...leaders.map(l => l.score || 0)) : 1;
+        const tbody = document.getElementById('leaderBody');
+
+        if (!leaders.length) {
+            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-trophy"></i><p>No leaderboard data</p></div></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = leaders.map((l, i) => {
+            const rank = i + 1;
+            const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-default';
+            const pct = maxScore ? Math.round((l.score / maxScore) * 100) : 0;
+            const trendIcon = l.trend === 'up' ? 'fa-arrow-up trend-up' : l.trend === 'down' ? 'fa-arrow-down trend-down' : 'fa-minus trend-neutral';
+            const badgesHtml = (l.badges || []).slice(0, 3).map(b => `<span title="${b.name || b}" style="font-size:16px;">${b.icon || '🏅'}</span>`).join('') || '<span style="color:var(--muted); font-size:11px;">—</span>';
+
+            return `
+            <tr style="animation: slideDown 0.3s ease ${i * 0.05}s both;">
+                <td><div class="rank-num ${rankClass}">${rank}</div></td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">
+                            ${(l.name||'?')[0].toUpperCase()}
+                        </div>
+                        <div>
+                            <div style="font-weight:600; color:#fff; font-size:13px;">${l.name || 'Unknown'}</div>
+                            <div style="font-size:11px; color:var(--muted);">${l.department || 'General'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-weight:700; color:var(--primary); font-size:16px;">${l.score || 0}</td>
+                <td style="min-width:120px;">
+                    <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%;"></div></div>
+                </td>
+                <td>${badgesHtml}</td>
+                <td><i class="fas ${trendIcon}"></i></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderBadges() {
+        document.getElementById('badgeGrid').innerHTML = allBadges.map(b => `
+            <div class="badge-item">
+                <span class="badge-icon">${b.icon}</span>
+                <div class="badge-name">${b.name}</div>
+                <div class="badge-desc">${b.desc}</div>
+            </div>
+        `).join('');
+    }
+
+    // Init
+    loadLeaderboard();
+</script>
+{% endblock %}

@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Task Kanban — Richa Global Admin</title>
+    <title>Task Kanban — Aadarsh Global Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <!-- Dragula for Drag and Drop -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: { preflight: false }
+        }
+    </script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--primary:#6366f1;--accent:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1a1a2e;--card2:#16213e;--border:rgba(99,102,241,0.15);--muted:#94a3b8;--bg:#0f0f1a}
@@ -90,16 +96,7 @@
 <body>
 <div class="toast-container" id="toastContainer"></div>
 
-<nav class="sidebar">
-    <div class="sidebar-brand"><div class="logo">R</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Admin Panel</div></div></div>
-    <div class="sidebar-nav">
-        <div class="nav-section">Main</div>
-        <a href="/admin/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="/admin/employees" class="nav-item"><i class="fas fa-users"></i> Employees</a>
-        <a href="/admin/tasks" class="nav-item active"><i class="fas fa-tasks"></i> Tasks</a>
-        <a href="/admin/attendance" class="nav-item"><i class="fas fa-clock"></i> Attendance</a>
-    </div>
-</nav>
+{% include 'components/admin_sidebar.html' %}
 
 <div class="main">
     <div class="topbar">
@@ -185,7 +182,7 @@
                 const atts = t.attachments ? t.attachments.length : 0;
                 
                 return `
-                <div class="k-card" data-id="${t._id}" onclick="window.location.href='/admin/tasks/${t._id}'">
+                <div class="k-card" data-id="${t._id}" onclick="window.location.href='/admin/tasks/detail/${t._id}'">
                     <div class="k-priority ${t.priority||'medium'}"></div>
                     <div class="k-id">${t.task_id}</div>
                     <div class="k-title">${t.title}</div>

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: { primary: '#4f46e5', secondary: '#8b5cf6', background: '#f8fafc' }
+            }
+        }
+    }
+</script>
+<style>
+    /* Reset base styles to avoid conflict */
+    body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .glass-card { background: #ffffff; border: 1px solid #f1f5f9; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); border-radius: 24px; }
+    
+    .badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-high { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
+    .badge-medium { background: #fef3c7; color: #f59e0b; border: 1px solid #fcd34d; }
+    .badge-low { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+    
+    .action-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .action-initial { background: #e0e7ff; color: #4f46e5; }
+    .action-reassign { background: #ffe4e6; color: #e11d48; }
+
+    /* Fix sidebar layout */
+    .layout-wrapper { display: flex; min-height: 100vh; overflow: hidden; }
+    .sidebar-wrapper { width: 280px; flex-shrink: 0; background: #0f172a; }
+    .main-content { flex-grow: 1; padding: 32px; overflow-y: auto; height: 100vh; }
+    
+    @media (max-width: 768px) {
+        .sidebar-wrapper { display: none; }
+        .main-content { padding: 16px; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="layout-wrapper">
+    <!-- Sidebar Included -->
+    <div class="sidebar-wrapper">
+        {% include 'components/admin_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="max-w-7xl mx-auto">
+            
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Automation Logs</h1>
+                    <p class="text-slate-500 mt-1">Detailed tracking of the Lead Reassignment Engine and SLAs</p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="glass-card p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex gap-4">
+                    <select id="priorityFilter" onchange="fetchLogs()" class="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">All Priorities</option>
+                        <option value="High">High Priority</option>
+                        <option value="Medium">Medium Priority</option>
+                        <option value="Low">Low Priority</option>
+                    </select>
+
+                    <select id="actionFilter" onchange="fetchLogs()" class="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">All Actions</option>
+                        <option value="Initial">Initial Assignment</option>
+                        <option value="Reassignment">SLA Breach Reassignment</option>
+                    </select>
+                </div>
+                
+                <button onclick="fetchLogs()" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i> Refresh Logs
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/50 border-b border-slate-100">
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Timestamp</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Lead</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Priority</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Action Type</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Transfer Path</th>
+                                <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">SLA Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody" class="divide-y divide-slate-100">
+                            <!-- JS injected -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div class="text-sm text-slate-500 font-medium" id="pageInfo">Showing 0 to 0 of 0 entries</div>
+                    <div class="flex gap-2">
+                        <button onclick="prevPage()" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"><i class="fas fa-chevron-left"></i></button>
+                        <button onclick="nextPage()" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    if (!token) window.location.href = '/login';
+    let currentPage = 1;
+    const limit = 15;
+    let totalPages = 1;
+
+    async function fetchLogs() {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center"><i class="fas fa-circle-notch fa-spin text-indigo-500 text-2xl"></i></td></tr>';
+        
+        const priority = document.getElementById('priorityFilter').value;
+        const action = document.getElementById('actionFilter').value;
+        
+        let url = `/api/automation/logs?page=${currentPage}&limit=${limit}`;
+        if(priority) url += `&priority=${priority}`;
+        if(action) url += `&action_type=${action}`;
+
+        try {
+            const res = await apiCall(url);
+            const data = await res.json();
+            
+            if(!data.logs || data.logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 font-medium"><i class="fas fa-inbox text-3xl mb-3 block"></i>No automation logs found.</td></tr>';
+                document.getElementById('pageInfo').textContent = 'No entries';
+                return;
+            }
+
+            totalPages = data.pages;
+            document.getElementById('pageInfo').textContent = `Showing page ${data.page} of ${data.pages} (Total: ${data.total})`;
+            
+            tbody.innerHTML = data.logs.map(log => {
+                const date = new Date(log.assigned_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                const prio = log.priority || 'Medium';
+                const prioClass = `badge-${prio.toLowerCase()}`;
+                
+                const actionType = log.action_type || (log.reassigned ? 'Reassignment' : 'Initial Assignment');
+                const actionClass = actionType.includes('Reassign') ? 'action-reassign' : 'action-initial';
+
+                let transferHtml = `<div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-slate-700">${log.assigned_to_name}</span>
+                </div>`;
+                
+                if(log.reassigned && log.assigned_from !== 'SYSTEM' && log.assigned_from !== 'AUTO_SYSTEM' && log.assigned_from !== 'ADMIN') {
+                    transferHtml = `<div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-slate-400 line-through">${log.assigned_from_name}</span>
+                        <i class="fas fa-arrow-right text-indigo-400 text-xs mx-1"></i>
+                        <span class="text-sm font-semibold text-slate-700">${log.assigned_to_name}</span>
+                    </div>`;
+                } else if(log.assigned_from === 'AUTO_SYSTEM') {
+                     transferHtml = `<div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400"><i class="fas fa-robot"></i> BOT</span>
+                        <i class="fas fa-arrow-right text-indigo-400 text-xs mx-1"></i>
+                        <span class="text-sm font-semibold text-slate-700">${log.assigned_to_name}</span>
+                    </div>`;
+                }
+
+                let slaStatus = `<span class="text-slate-400 text-xs font-semibold"><i class="fas fa-check text-emerald-500 mr-1"></i> Met</span>`;
+                if(log.reassigned) {
+                    slaStatus = `<span class="text-rose-500 text-xs font-semibold"><i class="fas fa-fire mr-1"></i> Breached</span>`;
+                }
+                
+                return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-slate-600 font-medium">${date}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-bold text-slate-800">${log.lead_name || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="badge ${prioClass}">${prio}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="action-badge ${actionClass}">${actionType}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        ${transferHtml}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${slaStatus}
+                    </td>
+                </tr>`;
+            }).join('');
+
+        } catch(e) {
+            showToast('Failed to load automation logs', 'error');
+            console.error(e);
+        }
+    }
+
+    function prevPage() { if(currentPage > 1) { currentPage--; fetchLogs(); } }
+    function nextPage() { if(currentPage < totalPages) { currentPage++; fetchLogs(); } }
+
+    document.addEventListener('DOMContentLoaded', fetchLogs);
+</script>
+{% endblock %}

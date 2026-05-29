@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Task Detail — Richa Global Admin</title>
+    <title>Task Detail — Aadarsh Global Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -181,24 +181,7 @@
     </div>
 </div>
 
-<nav class="sidebar">
-    <div class="sidebar-brand"><div class="logo">R</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Admin Panel</div></div></div>
-    <div class="sidebar-nav">
-        <div class="nav-section">Main</div>
-        <a href="/admin/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="/admin/employees" class="nav-item"><i class="fas fa-users"></i> Employees</a>
-        <a href="/admin/tasks" class="nav-item active"><i class="fas fa-tasks"></i> Tasks</a>
-        <a href="/admin/attendance" class="nav-item"><i class="fas fa-clock"></i> Attendance</a>
-        <div class="nav-section">Insights</div>
-        <a href="/admin/analytics" class="nav-item"><i class="fas fa-chart-line"></i> Analytics</a>
-        <a href="/admin/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages</a>
-    </div>
-    <div class="sidebar-footer">
-        <div class="user-card"><div class="avatar" id="sidebarAvatar">A</div><div><div class="user-name" id="sidebarName">Admin</div><div class="user-role">Administrator</div></div></div>
-        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
-    </div>
-</nav>
-
+{% include 'components/admin_sidebar.html' %}
 <div class="main">
     <div class="topbar">
         <a href="/admin/tasks" class="back-btn"><i class="fas fa-arrow-left"></i> Tasks</a>

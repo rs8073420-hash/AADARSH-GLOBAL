@@ -5,7 +5,8 @@
     <title>Task Detail — Employee Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--primary:#3b82f6;--accent:#06b6d4;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1e293b;--card2:#0f172a;--border:rgba(59,130,246,0.15);--muted:#94a3b8;--bg:#020617}
@@ -20,7 +21,7 @@
         .nav-item:hover,.nav-item.active{background:rgba(59,130,246,.15);color:var(--primary)}
         .sidebar-footer{padding:16px 12px}
         .user-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
-        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0}
         .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
         
         .main{margin-left:260px;flex:1;min-height:100vh}
@@ -115,14 +116,31 @@
 </div>
 
 <nav class="sidebar">
-    <div class="sidebar-brand"><div class="logo">E</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Employee Portal</div></div></div>
+    <div class="sidebar-brand"><div class="logo">A</div><div><div class="brand-name">Aadarsh Global</div><div class="brand-sub">Employee Portal</div></div></div>
     <div class="sidebar-nav">
         <a href="/employee/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
         <a href="/employee/tasks" class="nav-item active"><i class="fas fa-tasks"></i> My Tasks</a>
+        <a href="/employee/leads" class="nav-item"><i class="fas fa-funnel-dollar"></i> My Leads</a>
         <a href="/employee/attendance" class="nav-item"><i class="fas fa-clock"></i> Attendance</a>
+        <a href="/employee/calendar" class="nav-item"><i class="fas fa-calendar-alt"></i> Calendar</a>
+        <a href="/employee/notes" class="nav-item"><i class="fas fa-sticky-note"></i> Sticky Notes</a>
+        <a href="/employee/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages</a>
+        
+        <div style="font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; padding-left: 12px;">Account</div>
+        <a href="/employee/profile" class="nav-item"><i class="fas fa-user"></i> My Profile</a>
+        <a href="/employee/notifications" class="nav-item" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;"><i class="fas fa-bell"></i> Notifications</div>
+            <span class="global-bell-badge-sync bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+        </a>
     </div>
     <div class="sidebar-footer">
-        <div class="user-card"><div class="avatar" id="sidebarAvatar">E</div><div><div style="font-weight:600;font-size:13px" id="sidebarName">Employee</div><div style="font-size:11px;color:var(--muted)">Employee</div></div></div>
+        <div class="user-card">
+            <div class="avatar" id="sidebarAvatar">E</div>
+            <div style="min-width: 0; flex: 1;">
+                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sidebarName">Employee</div>
+                <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sidebarRole">Employee</div>
+            </div>
+        </div>
         <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
     </div>
 </nav>
@@ -131,7 +149,7 @@
     <div class="topbar">
         <a href="/employee/tasks" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
         <div class="topbar-title" id="topbarTitle">Task Detail</div>
-        <div id="topbarStatus"></div>
+        <div id="topbarStatus"><span id="task-status"></span></div>
     </div>
     <div class="content">
         <div class="detail-grid">
@@ -185,7 +203,8 @@
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if(!token) window.location.href = '/login';
     document.getElementById('sidebarName').textContent = user.name || 'Employee';
-    document.getElementById('sidebarAvatar').textContent = (user.name||'E')[0].toUpperCase();
+    document.getElementById('sidebarAvatar').textContent = (user.name||'E').charAt(0).toUpperCase();
+    document.getElementById('sidebarRole').textContent = user.department || 'Staff';
     const TASK_ID = '{{ task_id }}';
     
     function showToast(msg, type='info') {
@@ -208,7 +227,7 @@
         if(!r.ok) return showToast('Error loading task','error');
         const t = await r.json();
         
-        document.getElementById('topbarStatus').innerHTML = `<span class="badge badge-${t.status}">${t.status.replace('_',' ').toUpperCase()}</span>`;
+        document.getElementById('task-status').innerHTML = `<span class="badge badge-${t.status}">${(t.status || 'pending').replace('_', ' ').toUpperCase()}</span>`;
         document.getElementById('taskTitle').textContent = t.title;
         document.getElementById('taskDesc').textContent = t.description;
         document.getElementById('taskMeta').innerHTML = `

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}My Leads — Employee{% endblock %}
+
+{% block extra_css %}
+<style>
+    .glass { background: rgba(26,26,46,0.8); backdrop-filter: blur(12px); border: 1px solid var(--border); }
+    .gradient-header { background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .lead-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; transition: all 0.2s; margin-bottom: 12px; }
+    .lead-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); }
+    .action-btn { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; border: none; cursor: pointer; text-decoration: none; }
+    .action-btn:hover { transform: translateY(-2px); }
+    .btn-whatsapp { background: rgba(37,211,102,0.15); color: #25d366; }
+    .btn-whatsapp:hover { background: rgba(37,211,102,0.3); }
+    .btn-call { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .btn-call:hover { background: rgba(59,130,246,0.3); }
+    .badge-new { background: rgba(99,102,241,0.15); color: var(--primary); }
+    .badge-contacted { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .badge-interested { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .badge-site_visit { background: rgba(139,92,246,0.15); color: var(--accent); }
+    .badge-negotiation { background: rgba(236,72,153,0.15); color: #ec4899; }
+    .badge-closed { background: rgba(16,185,129,0.15); color: var(--success); }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include 'components/employee_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-funnel-dollar" style="margin-right:8px; color:var(--primary);"></i> My Leads</div>
+        <div class="topbar-actions">
+            <div class="notif-btn" onclick="loadLeads()"><i class="fas fa-sync-alt"></i></div>
+            <div class="notif-btn" style="position:relative;">
+                <a href="/employee/notifications" style="color:inherit; text-decoration:none;"><i class="fas fa-bell"></i></a>
+                <div class="notif-badge global-bell-badge-sync hidden" id="notifBadge">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="card" style="margin-bottom:20px; padding:16px 20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <div style="position:relative;">
+                        <i class="fas fa-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px;"></i>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search leads..." style="padding-left:40px; width:250px;" oninput="filterLeads()">
+                    </div>
+                    <select class="form-control" id="filterStatus" style="width:150px;" onchange="filterLeads()">
+                        <option value="">All Status</option>
+                        <option value="New">New</option>
+                        <option value="Contacted">Contacted</option>
+                        <option value="Interested">Interested</option>
+                        <option value="Site Visit">Site Visit</option>
+                        <option value="Negotiation">Negotiation</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-3" id="leadsGrid">
+            <!-- Loading Skeletons -->
+            <div class="card skeleton" style="height:150px;"></div>
+            <div class="card skeleton" style="height:150px;"></div>
+            <div class="card skeleton" style="height:150px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Lead Status/Notes Modal -->
+<div class="modal-overlay" id="leadModal">
+    <div class="modal" style="max-width:400px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div class="modal-title" style="margin-bottom:0;">Update Lead</div>
+            <button onclick="closeModal('leadModal')" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px;"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="leadForm" onsubmit="saveLead(event)">
+            <input type="hidden" id="leadId">
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-control" id="leadStatus">
+                    <option value="New">New</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="Interested">Interested</option>
+                    <option value="Site Visit">Site Visit</option>
+                    <option value="Negotiation">Negotiation</option>
+                    <option value="Closed">Closed</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Follow-up Notes</label>
+                <textarea class="form-control" id="leadNotes" rows="4" style="resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('leadModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Updates</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    if (!token) window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Employee';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'E')[0].toUpperCase();
+
+    let allLeads = [];
+
+    async function loadLeads() {
+        try {
+            // Employee only sees their own assigned leads
+            const res = await fetch(`/api/leads?assigned_to=${user.id}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            allLeads = data.leads || [];
+            filterLeads();
+        } catch(e) {
+            showToast('Failed to load leads', 'error');
+            console.error(e);
+        }
+    }
+
+    function filterLeads() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('filterStatus').value;
+
+        const filtered = allLeads.filter(l => {
+            const matchSearch = !search || String(l.name||'').toLowerCase().includes(search) || String(l.phone||'').includes(search) || String(l.email||'').toLowerCase().includes(search);
+            const matchStatus = !status || l.status === status;
+            return matchSearch && matchStatus;
+        });
+
+        renderGrid(filtered);
+    }
+
+    function renderGrid(leads) {
+        const grid = document.getElementById('leadsGrid');
+        if (!leads.length) {
+            grid.innerHTML = `<div style="grid-column:1/-1;"><div class="empty-state"><i class="fas fa-inbox"></i><p>No leads assigned to you yet.</p></div></div>`;
+            return;
+        }
+
+        grid.innerHTML = leads.map(l => {
+            const statusClass = 'badge-' + (l.status||'new').toLowerCase().replace(' ', '_');
+            const phoneFormat = (l.phone||'').replace(/\D/g, '');
+            return `
+            <div class="lead-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                    <div>
+                        <div style="font-weight:600; font-size:15px; color:#fff;">${l.name}</div>
+                        <div style="font-size:13px; color:var(--muted); margin-top:2px;">${l.city || 'No City'} • ${l.budget || 'Budget TBA'}</div>
+                    </div>
+                    <span class="badge ${statusClass}">${l.status}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+                    <div style="display:flex; gap:6px;">
+                        <a href="https://wa.me/${phoneFormat}" target="_blank" class="action-btn btn-whatsapp"><i class="fab fa-whatsapp"></i></a>
+                        <a href="tel:${l.phone}" class="action-btn btn-call"><i class="fas fa-phone"></i></a>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick='openEditModal(${JSON.stringify(l).replace(/'/g, "&#39;")})'>Update</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function openEditModal(lead) {
+        document.getElementById('leadId').value = lead._id;
+        document.getElementById('leadStatus').value = lead.status || 'New';
+        document.getElementById('leadNotes').value = lead.notes || '';
+        document.getElementById('leadModal').classList.add('active');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    async function saveLead(e) {
+        e.preventDefault();
+        const id = document.getElementById('leadId').value;
+        const body = {
+            status: document.getElementById('leadStatus').value,
+            notes: document.getElementById('leadNotes').value
+        };
+        try {
+            const res = await fetch(`/api/leads/${id}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                showToast('Lead updated!', 'success');
+                closeModal('leadModal');
+                loadLeads();
+            } else {
+                showToast('Failed to update lead', 'error');
+            }
+        } catch(e) { showToast('Error updating lead', 'error'); }
+    }
+
+    // Socket.IO
+    try {
+        const socket = io();
+        socket.on('lead_assigned', (data) => {
+            if(data.assigned_to === user.id) {
+                showToast(`New lead assigned: ${data.lead_name}`, 'info');
+                loadLeads();
+            }
+        });
+        socket.on('lead_update', () => loadLeads());
+    } catch(e) {}
+
+    loadLeads();
+</script>
+{% endblock %}

@@ -66,3 +66,55 @@ def employee_attendance():
 @views_bp.route('/employee/messages')
 def employee_messages():
     return render_template('employee/messages.html')
+
+# ===================================================================
+# NEW CRM / FEATURE VIEW ROUTES
+# ===================================================================
+
+@views_bp.route('/admin/leads')
+def admin_leads():
+    return render_template('admin/leads.html')
+
+@views_bp.route('/admin/crm-pipeline')
+def admin_crm_pipeline():
+    return render_template('admin/crm_pipeline.html')
+
+@views_bp.route('/admin/activity-tracker')
+def admin_activity_tracker():
+    return render_template('admin/activity_tracker.html')
+
+@views_bp.route('/admin/calendar')
+def admin_calendar():
+    return render_template('admin/calendar.html')
+
+@views_bp.route('/admin/gamification')
+def admin_gamification():
+    return render_template('admin/gamification.html')
+
+@views_bp.route('/admin/notifications')
+def admin_notifications():
+    return render_template('admin/notifications.html')
+
+@views_bp.route('/admin/automation-logs')
+def admin_automation_logs():
+    return render_template('admin/automation_logs.html')
+
+@views_bp.route('/employee/leads')
+def employee_leads():
+    return render_template('employee/leads.html')
+
+@views_bp.route('/employee/calendar')
+def employee_calendar():
+    return render_template('employee/calendar.html')
+
+@views_bp.route('/employee/notes')
+def employee_notes():
+    return render_template('employee/notes.html')
+
+@views_bp.route('/employee/profile')
+def employee_profile():
+    return render_template('employee/profile.html')
+
+@views_bp.route('/employee/notifications')
+def employee_notifications():
+    return render_template('employee/notifications.html')

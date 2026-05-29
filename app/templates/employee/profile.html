@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}My Profile — Employee{% endblock %}
+
+{% block extra_css %}
+<style>
+    .glass { background: rgba(26,26,46,0.8); backdrop-filter: blur(12px); border: 1px solid var(--border); }
+    .profile-header { background: linear-gradient(135deg, var(--primary-dark), var(--accent)); padding: 40px; border-radius: 14px; position: relative; overflow: hidden; margin-bottom: 24px; }
+    .profile-header::after { content: ''; position: absolute; top: 0; right: 0; width: 300px; height: 300px; background: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="none"/></svg>'); background-size: cover; opacity: 0.5; transform: translate(30%, -30%); pointer-events: none; }
+    .profile-avatar-large { width: 100px; height: 100px; border-radius: 50%; background: #fff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; border: 4px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .tab-btn { background: transparent; border: none; color: var(--muted); padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-content { display: none; padding-top: 20px; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .badge-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; transition: transform 0.2s; }
+    .badge-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(99,102,241,0.1); }
+    .badge-icon { font-size: 48px; margin-bottom: 12px; display: block; }
+    .badge-card.unearned { opacity: 0.5; filter: grayscale(100%); }
+    
+    .timeline { position: relative; padding-left: 30px; }
+    .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; margin-bottom: 20px; }
+    .timeline-item::before { content: ''; position: absolute; left: -34px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); border: 3px solid var(--bg); }
+    .timeline-date { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .timeline-content { background: var(--card2); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+{% endblock %}
+
+{% block body %}
+{% include 'components/employee_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-user" style="margin-right:8px; color:var(--primary);"></i> My Profile</div>
+    </div>
+
+    <div class="page-content">
+        <!-- Profile Header -->
+        <div class="profile-header" style="display:flex; align-items:center; gap:24px;">
+            <div class="profile-avatar-large" id="profileAvatarBig">E</div>
+            <div>
+                <h1 style="color:#fff; font-size:28px; font-weight:700; margin-bottom:4px;" id="profileName">Loading...</h1>
+                <div style="color:rgba(255,255,255,0.8); font-size:14px; margin-bottom:12px;" id="profileDesc">Staff | IT Department</div>
+                <div style="display:flex; gap:16px;">
+                    <div style="background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600; color:#fff;">
+                        <i class="fas fa-id-badge" style="color:var(--warning); margin-right:4px;"></i> <span id="profileEmpId">EMP-000</span>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600; color:#fff;">
+                        <i class="fas fa-calendar-check" style="color:var(--success); margin-right:4px;"></i> Joined: <span id="profileJoined">2026-01-01</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-4" style="margin-bottom:24px;">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(99,102,241,0.15); color:var(--primary);"><i class="fas fa-bolt"></i></div>
+                <div class="stat-value" id="statScore">0</div>
+                <div class="stat-label">Productivity Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:var(--success);"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-value" id="statTasks">0</div>
+                <div class="stat-label">Tasks Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:var(--warning);"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-value" id="statAttendance">0%</div>
+                <div class="stat-label">Attendance Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(139,92,246,0.15); color:var(--accent);"><i class="fas fa-trophy"></i></div>
+                <div class="stat-value" id="statBadges">0</div>
+                <div class="stat-label">Badges Earned</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="card" style="padding:0;">
+            <div style="display:flex; border-bottom:1px solid var(--border); padding:0 16px;">
+                <button class="tab-btn active" onclick="switchTab(this, 'tabOverview')">Overview</button>
+                <button class="tab-btn" onclick="switchTab(this, 'tabAchievements')">Achievements</button>
+                <button class="tab-btn" onclick="switchTab(this, 'tabSettings')">Settings</button>
+            </div>
+
+            <!-- Tab: Overview -->
+            <div id="tabOverview" class="tab-content active" style="padding:24px;">
+                <div class="grid grid-2">
+                    <div>
+                        <h3 style="color:#fff; font-size:15px; font-weight:600; margin-bottom:16px;">Productivity Breakdown</h3>
+                        <div id="chartProductivity"></div>
+                        <div id="aiSummary" style="margin-top:20px; background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); padding:16px; border-radius:8px; font-size:13px; line-height:1.6; color:var(--text);">
+                            <div class="skeleton" style="width:100%; height:10px; margin-bottom:8px;"></div>
+                            <div class="skeleton" style="width:90%; height:10px; margin-bottom:8px;"></div>
+                            <div class="skeleton" style="width:80%; height:10px;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color:#fff; font-size:15px; font-weight:600; margin-bottom:16px;">Recent Activity</h3>
+                        <div class="timeline" id="activityTimeline">
+                            <div class="skeleton" style="width:100%; height:50px; margin-bottom:16px; border-radius:8px;"></div>
+                            <div class="skeleton" style="width:100%; height:50px; margin-bottom:16px; border-radius:8px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Achievements -->
+            <div id="tabAchievements" class="tab-content" style="padding:24px;">
+                <h3 style="color:#fff; font-size:15px; font-weight:600; margin-bottom:16px;">My Badges & Rewards</h3>
+                <div class="grid grid-4" id="badgesGrid">
+                    <div class="skeleton" style="height:140px; border-radius:12px;"></div>
+                    <div class="skeleton" style="height:140px; border-radius:12px;"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Settings -->
+            <div id="tabSettings" class="tab-content" style="padding:24px;">
+                <h3 style="color:#fff; font-size:15px; font-weight:600; margin-bottom:16px;">Account Details</h3>
+                <form id="profileForm" onsubmit="saveProfile(event)" style="max-width:500px;">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="inpEmail">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone/Mobile</label>
+                        <input type="text" class="form-control" id="inpMobile" disabled title="Contact HR to change phone number">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Residential Address</label>
+                        <textarea class="form-control" id="inpAddress" rows="3" style="resize:vertical;"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top:12px;"><i class="fas fa-save"></i> Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    if (!token) window.location.href = '/login';
+
+    function switchTab(btn, tabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    async function loadProfile() {
+        try {
+            // Load base profile
+            const res = await fetch('/api/employee/profile', { headers: { 'Authorization': `Bearer ${token}` }});
+            const emp = await res.json();
+            
+            document.getElementById('sidebarName').textContent = emp.name;
+            document.getElementById('sidebarAvatar').textContent = (emp.name)[0].toUpperCase();
+            
+            document.getElementById('profileName').textContent = emp.name;
+            document.getElementById('profileAvatarBig').textContent = (emp.name)[0].toUpperCase();
+            document.getElementById('profileDesc').textContent = `${emp.designation || 'Staff'} | ${emp.department || 'N/A'}`;
+            document.getElementById('profileEmpId').textContent = emp.employee_id;
+            document.getElementById('profileJoined').textContent = emp.join_date || 'N/A';
+
+            document.getElementById('inpEmail').value = emp.email || '';
+            document.getElementById('inpMobile').value = emp.mobile || '';
+            document.getElementById('inpAddress').value = emp.address || '';
+
+            // Load Productivity
+            loadProductivity(emp._id);
+            
+            // Load Badges
+            loadBadges(emp._id);
+
+            // Load AI Summary
+            loadSummary(emp._id);
+
+            // Load Activity (using generic task/attendance for timeline)
+            loadActivity();
+
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadProductivity(empId) {
+        try {
+            const res = await fetch(`/api/productivity/score/${empId}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            
+            document.getElementById('statScore').textContent = data.score || 0;
+            document.getElementById('statTasks').textContent = data.completed_tasks || 0;
+            document.getElementById('statAttendance').textContent = `${data.attendance_score || 0}%`;
+
+            // Chart
+            const options = {
+                series: [{
+                    name: 'Score',
+                    data: [data.attendance_score||0, data.work_hours_score||0, data.task_completion_score||0, data.punctuality_score||0]
+                }],
+                chart: { type: 'radar', height: 280, toolbar: { show: false }, background: 'transparent' },
+                labels: ['Attendance', 'Work Hours', 'Tasks', 'Punctuality'],
+                stroke: { width: 2, colors: ['#6366f1'] },
+                fill: { opacity: 0.2, colors: ['#6366f1'] },
+                markers: { size: 4, colors: ['#fff'], strokeColors: '#6366f1', strokeWidth: 2 },
+                yaxis: { show: false, min: 0, max: 100 },
+                xaxis: { labels: { style: { colors: ['#94a3b8','#94a3b8','#94a3b8','#94a3b8'], fontSize: '11px', fontFamily: 'Inter' } } },
+                theme: { mode: 'dark' }
+            };
+            new ApexCharts(document.querySelector("#chartProductivity"), options).render();
+
+        } catch(e) {}
+    }
+
+    async function loadBadges(empId) {
+        try {
+            const res = await fetch(`/api/gamification/badges/${empId}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            
+            document.getElementById('statBadges').textContent = (data.badges || []).length;
+            
+            const grid = document.getElementById('badgesGrid');
+            let html = '';
+            
+            if(data.badges) {
+                data.badges.forEach(b => {
+                    const d = new Date(b.earned_at).toLocaleDateString();
+                    html += `
+                    <div class="badge-card">
+                        <span class="badge-icon">${b.icon}</span>
+                        <div style="font-weight:600; color:#fff; font-size:14px;">${b.badge_name}</div>
+                        <div style="color:var(--primary); font-size:11px; margin-top:4px; font-weight:600;">+${b.points} Points</div>
+                        <div style="color:var(--muted); font-size:11px; margin-top:8px;">Earned: ${d}</div>
+                    </div>`;
+                });
+            }
+            if(data.unearned) {
+                data.unearned.forEach(b => {
+                    html += `
+                    <div class="badge-card unearned" title="Complete requirements to unlock">
+                        <span class="badge-icon">${b.icon}</span>
+                        <div style="font-weight:600; color:#fff; font-size:14px;">${b.badge_name}</div>
+                        <div style="color:var(--muted); font-size:11px; margin-top:8px;">${b.description}</div>
+                    </div>`;
+                });
+            }
+            grid.innerHTML = html;
+        } catch(e) {}
+    }
+
+    async function loadSummary(empId) {
+        try {
+            const res = await fetch(`/api/ai/summary/${empId}`, { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            const div = document.getElementById('aiSummary');
+            
+            if(data.summary) {
+                // Convert simple markdown bold to HTML
+                let html = data.summary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                html = html.replace(/\n/g, '<br>');
+                div.innerHTML = `<i class="fas fa-robot" style="color:var(--primary); margin-right:6px;"></i> <strong>AI Insight:</strong><br><br>${html}`;
+            } else {
+                div.innerHTML = 'Summary not available.';
+            }
+        } catch(e) {
+            document.getElementById('aiSummary').innerHTML = 'Summary unavailable.';
+        }
+    }
+
+    async function loadActivity() {
+        // Fallback generic activity from dashboard stats or history if needed
+        // For simplicity we show a generic empty state or fetch from attendance history
+        const tl = document.getElementById('activityTimeline');
+        tl.innerHTML = `<div class="timeline-item"><div class="timeline-date">Today</div><div class="timeline-content">Logged in and viewed profile</div></div>`;
+    }
+
+    async function saveProfile(e) {
+        e.preventDefault();
+        const body = {
+            email: document.getElementById('inpEmail').value,
+            address: document.getElementById('inpAddress').value
+        };
+        try {
+            const res = await fetch('/api/employee/profile', {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if(res.ok) showToast('Profile updated successfully!', 'success');
+            else showToast('Update failed', 'error');
+        } catch(e) { showToast('Error', 'error'); }
+    }
+
+    loadProfile();
+</script>
+{% endblock %}

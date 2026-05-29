@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Workspace — Richa Global</title>
+    <title>My Workspace — Aadarsh Global</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -112,11 +112,11 @@
 <div class="flex h-screen overflow-hidden">
     
     <!-- Sidebar -->
-    <aside class="w-64 glass-panel border-r border-slate-200/60 flex flex-col z-50 shrink-0 hidden md:flex shadow-xl shadow-slate-200/20">
+    <aside id="appSidebar" class="w-64 glass-panel border-r border-slate-200/60 flex flex-col z-50 shrink-0 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl shadow-slate-900/20 md:shadow-xl md:shadow-slate-200/20 bg-white/95 md:bg-transparent">
         <div class="p-6 border-b border-slate-200/60 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">R</div>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30">A</div>
             <div>
-                <h1 class="font-bold text-slate-800 text-lg leading-tight tracking-tight">Richa Global</h1>
+                <h1 class="font-bold text-slate-800 text-lg leading-tight tracking-tight">Aadarsh Global</h1>
                 <p class="text-xs font-semibold text-indigo-600 tracking-wider uppercase">Workspace</p>
             </div>
         </div>
@@ -129,11 +129,27 @@
             <a href="/employee/tasks" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
                 <i class="fas fa-list-check w-5 text-center text-lg"></i> My Tasks
             </a>
+            <a href="/employee/leads" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-funnel-dollar w-5 text-center text-lg"></i> My Leads
+            </a>
             <a href="/employee/attendance" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
                 <i class="fas fa-calendar-check w-5 text-center text-lg"></i> Attendance
             </a>
+            <a href="/employee/calendar" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-calendar-alt w-5 text-center text-lg"></i> Calendar
+            </a>
+            <a href="/employee/notes" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-sticky-note w-5 text-center text-lg"></i> Sticky Notes
+            </a>
             <a href="/employee/messages" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 mt-2">
                 <i class="fas fa-envelope w-5 text-center text-lg"></i> Inbox
+            </a>
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-6">Account</div>
+            <a href="/employee/profile" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-user w-5 text-center text-lg"></i> My Profile
+            </a>
+            <a href="/employee/notifications" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600">
+                <i class="fas fa-bell w-5 text-center text-lg"></i> Notifications
             </a>
         </div>
 
@@ -158,8 +174,9 @@
             <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Personal Workspace</h2>
             
             <div class="flex items-center gap-4">
-                <a href="/employee/messages" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 flex items-center justify-center transition-all shadow-sm relative">
+                <a href="/employee/notifications" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 flex items-center justify-center transition-all shadow-sm relative">
                     <i class="fas fa-bell"></i>
+                    <span class="global-bell-badge-sync absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white hidden">0</span>
                 </a>
                 <button onclick="loadStats();loadTasks()" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 flex items-center justify-center transition-all shadow-sm">
                     <i class="fas fa-rotate"></i>
@@ -173,7 +190,7 @@
             <!-- Welcome Banner with Actions -->
             <div class="welcome-gradient border border-slate-200 rounded-3xl p-8 mb-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in-up">
                 <div>
-                    <h2 class="text-3xl font-black text-slate-800 mb-2 tracking-tight">Good Morning!</h2>
+                    <h2 class="text-3xl font-black text-slate-800 mb-2 tracking-tight" id="greeting-text">Welcome!</h2>
                     <p class="text-slate-500 font-medium">Ready to start your day? Clock in to begin logging hours.</p>
                 </div>
                 <div class="flex gap-4 z-10">
@@ -503,6 +520,52 @@
     socket.on('dashboard_update', (data) => {
         loadStats(); loadTasks();
     });
+    
+    async function fetchUnreadNotifications() {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch('/api/notifications/unread-count', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if(data && data.unread_count !== undefined) {
+                    const count = data.unread_count;
+                    const badges = document.querySelectorAll('.global-bell-badge-sync');
+                    badges.forEach(b => {
+                        if(count > 0) {
+                            b.textContent = count > 99 ? '99+' : count;
+                            b.classList.remove('hidden');
+                        } else {
+                            b.classList.add('hidden');
+                        }
+                    });
+                }
+            }
+        } catch(e) {}
+    }
+    fetchUnreadNotifications();
+    socket.on('new_notification', (data) => {
+        fetchUnreadNotifications();
+        showToast(data.title || 'New Notification', 'info');
+    });
+
+    // Dynamic Greeting
+    document.addEventListener('DOMContentLoaded', () => {
+        const hour = new Date().getHours();
+        const greetingEl = document.getElementById('greeting-text');
+        if (greetingEl) {
+            if (hour < 12) greetingEl.textContent = 'Good Morning!';
+            else if (hour < 17) greetingEl.textContent = 'Good Afternoon!';
+            else greetingEl.textContent = 'Good Evening!';
+        }
+    });
 </script>
+
+<!-- Mobile Menu Button -->
+<button id="mobileMenuBtn" onclick="document.getElementById('appSidebar').classList.toggle('-translate-x-full')" class="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-indigo-600/40 z-[100] transition-transform hover:scale-110">
+    <i class="fas fa-bars"></i>
+</button>
+
 </body>
 </html>

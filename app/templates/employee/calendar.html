@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}Calendar — Employee{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" />
+<style>
+    .glass { background: rgba(26,26,46,0.8); backdrop-filter: blur(12px); border: 1px solid var(--border); }
+    #calendar { background: var(--card); padding: 20px; border-radius: 14px; border: 1px solid var(--border); color: #fff; }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: rgba(255,255,255,0.05); }
+    .fc-col-header-cell-cushion { color: var(--muted); text-transform: uppercase; font-size: 12px; font-weight: 600; padding: 10px 0 !important; }
+    .fc-daygrid-day-number { color: var(--text); padding: 8px !important; }
+    .fc-day-today { background: rgba(99,102,241,0.05) !important; }
+    .fc-button-primary { background: var(--card2) !important; border-color: var(--border) !important; text-transform: capitalize !important; }
+    .fc-button-primary:hover { background: var(--primary) !important; border-color: var(--primary) !important; }
+    .fc-button-active { background: var(--primary) !important; border-color: var(--primary) !important; }
+    .fc-toolbar-title { font-size: 18px !important; font-weight: 700 !important; }
+    .fc-event { border: none !important; border-radius: 4px; padding: 2px 4px; font-size: 11px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+    .fc-event:hover { transform: scale(1.02); }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include 'components/employee_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-calendar-alt" style="margin-right:8px; color:var(--primary);"></i> Calendar</div>
+        <div class="topbar-actions">
+            <button class="btn btn-primary btn-sm" onclick="openEventModal()"><i class="fas fa-plus"></i> Add Event</button>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- Add/Edit Event Modal -->
+<div class="modal-overlay" id="eventModal">
+    <div class="modal" style="max-width:400px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div class="modal-title" id="modalTitle" style="margin-bottom:0;">Add Event</div>
+            <button onclick="closeModal('eventModal')" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px;"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="eventForm" onsubmit="saveEvent(event)">
+            <input type="hidden" id="eventId">
+            <div class="form-group">
+                <label class="form-label">Title *</label>
+                <input type="text" class="form-control" id="eventTitle" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Start Date/Time *</label>
+                <input type="datetime-local" class="form-control" id="eventStart" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">End Date/Time</label>
+                <input type="datetime-local" class="form-control" id="eventEnd">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-control" id="eventType">
+                    <option value="task">Task</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="leave">Leave</option>
+                    <option value="deadline">Deadline</option>
+                    <option value="follow_up">Follow Up</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" id="eventDesc" rows="3" style="resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                <button type="button" class="btn btn-outline" id="btnDeleteEvent" style="display:none;" onclick="deleteEvent()">Delete</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('eventModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script>
+    if (!token) window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Employee';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'E')[0].toUpperCase();
+
+    let calendar;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            events: async function(info, successCallback, failureCallback) {
+                try {
+                    const startStr = info.startStr.split('T')[0];
+                    const endStr = info.endStr.split('T')[0];
+                    const res = await fetch(`/api/calendar?start=${startStr}&end=${endStr}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    
+                    const events = data.events.map(e => ({
+                        id: e._id,
+                        title: e.title,
+                        start: e.start,
+                        end: e.end,
+                        backgroundColor: e.color || '#6366f1',
+                        extendedProps: {
+                            description: e.description,
+                            type: e.type,
+                            created_by: e.created_by
+                        }
+                    }));
+                    successCallback(events);
+                } catch(e) { failureCallback(e); }
+            },
+            eventClick: function(info) {
+                const e = info.event;
+                openEventModal({
+                    _id: e.id,
+                    title: e.title,
+                    start: e.startStr,
+                    end: e.endStr,
+                    type: e.extendedProps.type,
+                    description: e.extendedProps.description,
+                    created_by: e.extendedProps.created_by
+                });
+            },
+            dateClick: function(info) {
+                // Auto fill start date
+                document.getElementById('eventStart').value = info.dateStr + 'T09:00';
+                openEventModal();
+            }
+        });
+        calendar.render();
+    });
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function openEventModal(event = null) {
+        document.getElementById('eventForm').reset();
+        document.getElementById('btnDeleteEvent').style.display = 'none';
+
+        if(event) {
+            // Check if current user is creator
+            if(event.created_by !== user.id) {
+                showToast("You can only edit events you created", "info");
+                return;
+            }
+            
+            document.getElementById('modalTitle').textContent = 'Edit Event';
+            document.getElementById('eventId').value = event._id;
+            document.getElementById('eventTitle').value = event.title;
+            document.getElementById('eventType').value = event.type || 'task';
+            document.getElementById('eventDesc').value = event.description || '';
+            
+            if(event.start) document.getElementById('eventStart').value = event.start.substring(0,16);
+            if(event.end) document.getElementById('eventEnd').value = event.end.substring(0,16);
+            
+            document.getElementById('btnDeleteEvent').style.display = 'block';
+        } else {
+            document.getElementById('modalTitle').textContent = 'Add Event';
+            document.getElementById('eventId').value = '';
+            
+            // Set default start time if not set
+            if(!document.getElementById('eventStart').value) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('eventStart').value = now.toISOString().slice(0,16);
+            }
+        }
+        
+        openModal('eventModal');
+    }
+
+    async function saveEvent(e) {
+        e.preventDefault();
+        const id = document.getElementById('eventId').value;
+        
+        const body = {
+            title: document.getElementById('eventTitle').value,
+            start: document.getElementById('eventStart').value,
+            end: document.getElementById('eventEnd').value,
+            type: document.getElementById('eventType').value,
+            description: document.getElementById('eventDesc').value,
+            assigned_to: user.id
+        };
+
+        try {
+            const url = id ? `/api/calendar/${id}` : '/api/calendar';
+            const method = id ? 'PUT' : 'POST';
+            
+            const res = await fetch(url, {
+                method,
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            
+            if(res.ok) {
+                showToast('Event saved', 'success');
+                closeModal('eventModal');
+                calendar.refetchEvents();
+            } else {
+                showToast('Failed to save event', 'error');
+            }
+        } catch(err) { showToast('Error', 'error'); }
+    }
+
+    async function deleteEvent() {
+        const id = document.getElementById('eventId').value;
+        if(!id || !confirm('Delete this event?')) return;
+        
+        try {
+            const res = await fetch(`/api/calendar/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if(res.ok) {
+                showToast('Event deleted', 'success');
+                closeModal('eventModal');
+                calendar.refetchEvents();
+            }
+        } catch(e) { showToast('Error', 'error'); }
+    }
+</script>
+{% endblock %}

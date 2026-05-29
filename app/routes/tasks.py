@@ -83,14 +83,10 @@ def create_task():
     result = model.create(data)
     task_id = str(result.inserted_id)
     from ..extensions import socketio
+    from .notifications import create_notification
     assigned_to = data.get('assigned_to', [])
     for emp_id in assigned_to:
-        socketio.emit('new_task', {
-            'task_id': task_id,
-            'title': data.get('title', ''),
-            'priority': data.get('priority', 'medium'),
-            'message': f'New task assigned: {data.get("title", "")}'
-        }, room=emp_id)
+        create_notification(emp_id, 'task', 'New Task Assigned', f'You have been assigned: {data.get("title", "")}', '/employee/tasks')
     socketio.emit('task_created', {'task_id': task_id, 'title': data.get('title', '')}, room='admin')
     return jsonify({'message': 'Task created', 'id': task_id}), 201
 
@@ -277,8 +273,11 @@ def reassign_task(task_id):
     }
     model.add_activity_log(task_id, log)
     from ..extensions import socketio
+    from .notifications import create_notification
+    task = model.find_by_id(task_id)
+    title = task.get('title', '') if task else 'A task'
     for emp_id in new_assigned:
-        socketio.emit('task_reassigned', {'task_id': task_id}, room=emp_id)
+        create_notification(emp_id, 'task', 'Task Reassigned', f'You have been assigned: {title}', '/employee/tasks')
     return jsonify({'message': 'Task reassigned'}), 200
 
 @tasks_bp.route('/kanban', methods=['GET'])

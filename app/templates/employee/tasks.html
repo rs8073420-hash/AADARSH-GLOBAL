@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Tasks – Richa Global</title>
-  <meta name="description" content="Employee task management dashboard for Richa Global" />
+  <title>My Tasks – Aadarsh Global</title>
+  <meta name="description" content="Employee task management dashboard for Aadarsh Global" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -101,9 +102,9 @@
       font-size: 13px; font-weight: 700; color: #fff;
       flex-shrink: 0;
     }
-    .user-info { min-width: 0; }
-    .user-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .user-id { font-size: 11px; color: var(--muted); }
+    .user-info { flex: 1; min-width: 0; overflow: hidden; }
+    .user-name { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-id { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
     .nav-section-label {
@@ -240,7 +241,7 @@
       font-size: 9px; font-weight: 700; color: #fff;
       display: flex; align-items: center; justify-content: center;
       border: 2px solid var(--bg);
-      display: none;
+      /* display: none; */
       padding: 0 3px;
     }
     .notif-count.visible { display: flex; }
@@ -766,9 +767,9 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-wrap">
-      <div class="logo-icon">RG</div>
+      <div class="logo-icon">A</div>
       <div class="logo-text">
-        Richa Global
+        Aadarsh Global
         <span>Employee Portal</span>
       </div>
     </div>
@@ -787,21 +788,35 @@
   <nav class="sidebar-nav">
     <div class="nav-section-label">Navigation</div>
     <a href="/employee/dashboard" class="nav-item">
-      <i class="fa-solid fa-gauge-high"></i>
-      Dashboard
+      <i class="fa-solid fa-gauge-high"></i> Dashboard
     </a>
     <a href="/employee/tasks" class="nav-item active">
-      <i class="fa-solid fa-list-check"></i>
-      My Tasks
+      <i class="fa-solid fa-list-check"></i> My Tasks
       <span class="nav-badge" id="sidebar-task-count">0</span>
     </a>
+    <a href="/employee/leads" class="nav-item">
+      <i class="fa-solid fa-funnel-dollar"></i> My Leads
+    </a>
     <a href="/employee/attendance" class="nav-item">
-      <i class="fa-solid fa-clock"></i>
-      Attendance
+      <i class="fa-solid fa-clock"></i> Attendance
+    </a>
+    <a href="/employee/calendar" class="nav-item">
+      <i class="fa-solid fa-calendar-alt"></i> Calendar
+    </a>
+    <a href="/employee/notes" class="nav-item">
+      <i class="fa-solid fa-sticky-note"></i> Sticky Notes
     </a>
     <a href="/employee/messages" class="nav-item">
-      <i class="fa-solid fa-message"></i>
-      Messages
+      <i class="fa-solid fa-message"></i> Messages
+    </a>
+
+    <div class="nav-section-label" style="margin-top: 15px;">Account</div>
+    <a href="/employee/profile" class="nav-item">
+      <i class="fa-solid fa-user"></i> My Profile
+    </a>
+    <a href="/employee/notifications" class="nav-item" style="justify-content: space-between;">
+      <div><i class="fa-solid fa-bell"></i> Notifications</div>
+      <span class="global-bell-badge-sync bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
     </a>
   </nav>
 
@@ -832,7 +847,7 @@
       </button>
       <button class="topbar-btn" id="notif-bell" onclick="toggleNotifPanel()" title="Notifications">
         <i class="fa-solid fa-bell"></i>
-        <span class="notif-count" id="notif-count">0</span>
+        <span class="notif-count global-bell-badge-sync hidden" id="notif-count">0</span>
       </button>
     </div>
   </header>

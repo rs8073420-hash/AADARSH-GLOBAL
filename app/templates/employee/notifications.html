@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Employee{% endblock %}
+
+{% block extra_css %}
+<style>
+    .glass { background: rgba(26,26,46,0.8); backdrop-filter: blur(12px); border: 1px solid var(--border); }
+    .notif-item { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; align-items: flex-start; transition: all 0.2s; }
+    .notif-item:hover { background: rgba(99,102,241,0.05); }
+    .notif-item.unread { background: rgba(99,102,241,0.1); border-left: 4px solid var(--primary); }
+    .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .notif-icon.info { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .notif-icon.task { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .notif-icon.alert { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .notif-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .notif-msg { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .notif-time { font-size: 11px; color: #64748b; margin-top: 8px; }
+    .btn-read { background: none; border: none; color: var(--primary); font-size: 12px; cursor: pointer; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
+    .btn-read:hover { background: rgba(99,102,241,0.1); }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include 'components/employee_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-bell" style="margin-right:8px; color:var(--primary);"></i> Notifications</div>
+        <div class="topbar-actions">
+            <button class="btn btn-outline btn-sm" onclick="markAllRead()"><i class="fas fa-check-double"></i> Mark all read</button>
+        </div>
+    </div>
+
+    <div class="page-content" style="max-width:800px; margin:0 auto;">
+        <div class="card" style="padding:0; overflow:hidden;" id="notifList">
+            <div style="padding:40px; text-align:center;">
+                <div class="skeleton" style="height:60px; margin-bottom:10px;"></div>
+                <div class="skeleton" style="height:60px; margin-bottom:10px;"></div>
+                <div class="skeleton" style="height:60px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    if (!token) window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Employee';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'E')[0].toUpperCase();
+
+    async function loadNotifications() {
+        try {
+            const res = await fetch('/api/notifications', { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            const list = document.getElementById('notifList');
+            
+            if (!data.notifications || data.notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No notifications yet</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = data.notifications.map(n => {
+                let iconClass = 'info';
+                let iconHtml = '<i class="fas fa-info"></i>';
+                if(n.type === 'task') { iconClass = 'task'; iconHtml = '<i class="fas fa-tasks"></i>'; }
+                if(n.type === 'alert') { iconClass = 'alert'; iconHtml = '<i class="fas fa-exclamation-triangle"></i>'; }
+
+                const d = new Date(n.created_at);
+                const timeStr = d.toLocaleString();
+
+                return `
+                <div class="notif-item ${!n.is_read ? 'unread' : ''}">
+                    <div class="notif-icon ${iconClass}">${iconHtml}</div>
+                    <div style="flex:1;">
+                        <div class="notif-title">${n.title}</div>
+                        <div class="notif-msg">${n.message}</div>
+                        <div class="notif-time">${timeStr}</div>
+                    </div>
+                    ${!n.is_read ? `<button class="btn-read" onclick="markRead('${n._id}')">Mark Read</button>` : ''}
+                </div>`;
+            }).join('');
+        } catch (e) {
+            console.error(e);
+            showToast('Failed to load notifications', 'error');
+        }
+    }
+
+    async function markRead(id) {
+        try {
+            const res = await fetch(`/api/notifications/${id}/read`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) loadNotifications();
+        } catch (e) { showToast('Error marking read', 'error'); }
+    }
+
+    async function markAllRead() {
+        try {
+            const res = await fetch(`/api/notifications/read-all`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                showToast('All marked as read', 'success');
+                loadNotifications();
+            }
+        } catch (e) { showToast('Error', 'error'); }
+    }
+
+    // Socket.IO
+    try {
+        const socket = io();
+        socket.on('new_notification', (data) => {
+            showToast(`New Notification: ${data.title}`, 'info');
+            loadNotifications();
+        });
+    } catch(e) {}
+
+    loadNotifications();
+</script>
+{% endblock %}

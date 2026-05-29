@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: aadarsh-global-erp
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn --worker-class eventlet -w 1 run:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false # Requires manual entry in the dashboard for security
+      - key: JWT_SECRET_KEY
+        generateValue: true

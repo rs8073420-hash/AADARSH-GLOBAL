@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Task Management — Richa Global</title>
-  <meta name="description" content="Admin task management panel for Richa Global Employee Management System"/>
+  <title>Task Management — Aadarsh Global</title>
+  <meta name="description" content="Admin task management panel for Aadarsh Global Employee Management System"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -698,38 +698,7 @@
 </head>
 <body>
 
-<!-- ═══════════════ SIDEBAR ═══════════════ -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <div class="brand-logo">
-      <div class="brand-icon"><i class="fa-solid fa-globe"></i></div>
-      <div>
-        <div class="brand-text">Richa Global</div>
-        <div class="brand-sub">Admin Portal</div>
-      </div>
-    </div>
-  </div>
-
-  <nav class="sidebar-nav">
-    <div class="nav-section-label">Main Menu</div>
-    <a href="/admin/dashboard" class="nav-item"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
-    <a href="/admin/employees" class="nav-item"><i class="fa-solid fa-users"></i> Employees</a>
-    <a href="/admin/tasks" class="nav-item active"><i class="fa-solid fa-list-check"></i> Tasks</a>
-    <a href="/admin/attendance" class="nav-item"><i class="fa-solid fa-clock"></i> Attendance</a>
-    <a href="/admin/analytics" class="nav-item"><i class="fa-solid fa-chart-line"></i> Analytics</a>
-    <a href="/admin/messages" class="nav-item"><i class="fa-solid fa-message"></i> Messages</a>
-  </nav>
-
-  <div class="sidebar-footer">
-    <div class="admin-profile">
-      <div class="admin-avatar">A</div>
-      <div>
-        <div class="admin-name">Administrator</div>
-        <div class="admin-role">Super Admin</div>
-      </div>
-    </div>
-  </div>
-</aside>
+{% include 'components/admin_sidebar.html' %}
 
 <!-- ═══════════════ MAIN ═══════════════ -->
 <div class="main-content">

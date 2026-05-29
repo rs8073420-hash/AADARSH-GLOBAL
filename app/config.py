@@ -9,7 +9,7 @@ class Config:
     MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/richa_global')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 86400)))
-    JWT_TOKEN_LOCATION = ['headers', 'cookies']
+    JWT_TOKEN_LOCATION = ['headers', 'cookies', 'query_string']
     JWT_COOKIE_SECURE = False
     JWT_COOKIE_CSRF_PROTECT = False
     JWT_HEADER_TYPE = 'Bearer'

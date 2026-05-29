@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+{% block title %}Lead Management — Aadarsh Global{% endblock %}
+
+{% block extra_css %}
+<style>
+    .glass { background: rgba(26,26,46,0.8); backdrop-filter: blur(12px); border: 1px solid var(--border); }
+    .gradient-header { background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-glow:hover { box-shadow: 0 0 30px rgba(99,102,241,0.2); }
+    .lead-row { transition: all 0.2s ease; }
+    .lead-row:hover { background: rgba(99,102,241,0.06) !important; transform: translateX(2px); }
+    .action-btn { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; border: none; cursor: pointer; }
+    .action-btn:hover { transform: translateY(-2px); }
+    .btn-whatsapp { background: rgba(37,211,102,0.15); color: #25d366; }
+    .btn-whatsapp:hover { background: rgba(37,211,102,0.3); }
+    .btn-call { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .btn-call:hover { background: rgba(59,130,246,0.3); }
+    .btn-edit { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .btn-edit:hover { background: rgba(245,158,11,0.3); }
+    .btn-delete { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .btn-delete:hover { background: rgba(239,68,68,0.3); }
+    .badge-new { background: rgba(99,102,241,0.15); color: var(--primary); }
+    .badge-contacted { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .badge-interested { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .badge-site_visit { background: rgba(139,92,246,0.15); color: var(--accent); }
+    .badge-negotiation { background: rgba(236,72,153,0.15); color: #ec4899; }
+    .badge-closed { background: rgba(16,185,129,0.15); color: var(--success); }
+    .search-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 10px 40px; color: var(--text); width: 280px; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .search-box:focus { border-color: var(--primary); }
+    .search-wrapper { position: relative; }
+    .search-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+    .filter-select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 12px; outline: none; min-width: 140px; }
+    .filter-select option { background: var(--card); }
+    .pagination-btn { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--card2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 13px; }
+    .pagination-btn:hover, .pagination-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .drop-zone { border: 2px dashed var(--border); border-radius: 14px; padding: 40px; text-align: center; transition: all 0.3s; cursor: pointer; }
+    .drop-zone:hover, .drop-zone.dragover { border-color: var(--primary); background: rgba(99,102,241,0.05); }
+    .skeleton { background: linear-gradient(90deg, var(--card2) 25%, rgba(99,102,241,0.08) 50%, var(--card2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .count-anim { animation: countUp 0.5s ease forwards; }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Sidebar -->
+{% include 'components/admin_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-funnel-dollar" style="margin-right:8px; color:var(--primary);"></i> Lead Management</div>
+        <div class="topbar-actions">
+            <div class="notif-btn" onclick="loadLeads()"><i class="fas fa-sync-alt"></i></div>
+            <div class="notif-btn" style="position:relative;">
+                <i class="fas fa-bell"></i>
+                <div class="notif-badge global-bell-badge-sync" id="notifBadge" style="display:none;">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <!-- Stats Row -->
+        <div class="grid grid-4" id="statsRow" style="margin-bottom:24px;">
+            <div class="stat-card stat-glow">
+                <div class="stat-icon" style="background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-value" id="statTotal">
+                    <div class="skeleton" style="width:60px;height:28px;"></div>
+                </div>
+                <div class="stat-label">Total Leads</div>
+            </div>
+            <div class="stat-card stat-glow">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff;">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-value" id="statNew">
+                    <div class="skeleton" style="width:50px;height:28px;"></div>
+                </div>
+                <div class="stat-label">New Leads</div>
+            </div>
+            <div class="stat-card stat-glow">
+                <div class="stat-icon" style="background:linear-gradient(135deg,var(--warning),#fbbf24); color:#fff;">
+                    <i class="fas fa-phone-volume"></i>
+                </div>
+                <div class="stat-value" id="statContacted">
+                    <div class="skeleton" style="width:50px;height:28px;"></div>
+                </div>
+                <div class="stat-label">Contacted</div>
+            </div>
+            <div class="stat-card stat-glow">
+                <div class="stat-icon" style="background:linear-gradient(135deg,var(--success),#34d399); color:#fff;">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <div class="stat-value" id="statClosed">
+                    <div class="skeleton" style="width:50px;height:28px;"></div>
+                </div>
+                <div class="stat-label">Closed</div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="card" style="margin-bottom:20px; padding:16px 20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <div class="search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-box" id="searchInput" placeholder="Search leads..." oninput="filterLeads()">
+                    </div>
+                    <select class="filter-select" id="filterStatus" onchange="filterLeads()">
+                        <option value="">All Status</option>
+                        <option value="New">New</option>
+                        <option value="Contacted">Contacted</option>
+                        <option value="Interested">Interested</option>
+                        <option value="Site Visit">Site Visit</option>
+                        <option value="Negotiation">Negotiation</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <select class="filter-select" id="filterPriority" onchange="filterLeads()">
+                        <option value="">All Priorities</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <select class="filter-select" id="filterSource" onchange="filterLeads()">
+                        <option value="">All Sources</option>
+                        <option value="Website">Website</option>
+                        <option value="Referral">Referral</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="Walk-in">Walk-in</option>
+                        <option value="Cold Call">Cold Call</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <select class="filter-select" id="filterAssigned" onchange="filterLeads()">
+                        <option value="">All Assigned</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline" onclick="openImportModal()"><i class="fas fa-file-csv"></i> Import CSV</button>
+                    <button class="btn btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Lead</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leads Table -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="overflow-x:auto;">
+                <table id="leadsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>City</th>
+                            <th>Budget</th>
+                            <th>Source</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsBody">
+                        <tr><td colspan="9" style="text-align:center; padding:40px;">
+                            <div class="skeleton" style="width:100%;height:20px;margin-bottom:12px;"></div>
+                            <div class="skeleton" style="width:100%;height:20px;margin-bottom:12px;"></div>
+                            <div class="skeleton" style="width:100%;height:20px;margin-bottom:12px;"></div>
+                            <div class="skeleton" style="width:80%;height:20px;"></div>
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-top:1px solid var(--border);">
+                <div style="font-size:13px; color:var(--muted);" id="paginationInfo">Showing 0 leads</div>
+                <div style="display:flex; gap:6px;" id="paginationBtns"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Lead Modal -->
+<div class="modal-overlay" id="leadModal">
+    <div class="modal" style="max-width:550px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div class="modal-title" id="modalTitle" style="margin-bottom:0;">Add New Lead</div>
+            <button onclick="closeModal('leadModal')" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px;"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="leadForm" onsubmit="saveLead(event)">
+            <input type="hidden" id="leadId">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label class="form-label">Name *</label>
+                    <input type="text" class="form-control" id="leadName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone *</label>
+                    <input type="text" class="form-control" id="leadPhone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="leadEmail">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" class="form-control" id="leadCity">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Budget</label>
+                    <input type="text" class="form-control" id="leadBudget" placeholder="e.g. ₹50L">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Source</label>
+                    <select class="form-control" id="leadSource">
+                        <option value="Website">Website</option>
+                        <option value="Referral">Referral</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="Walk-in">Walk-in</option>
+                        <option value="Cold Call">Cold Call</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Assigned To</label>
+                <select class="form-control" id="leadAssigned">
+                    <option value="">Unassigned</option>
+                </select>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select class="form-control" id="leadPriority">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:28px;">
+                    <input type="checkbox" id="leadAutoReassign" checked style="width:18px; height:18px; accent-color:var(--primary);">
+                    <label class="form-label" style="margin:0; cursor:pointer;" for="leadAutoReassign">Enable Auto Reassign</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="leadNotes" rows="3" style="resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('leadModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Lead</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CSV Import Modal -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal" style="max-width:480px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div class="modal-title" style="margin-bottom:0;">Import Leads from CSV</div>
+            <button onclick="closeModal('importModal')" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:18px;"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFile').click()">
+            <i class="fas fa-cloud-upload-alt" style="font-size:42px; color:var(--primary); margin-bottom:12px; display:block;"></i>
+            <p style="color:var(--text); font-size:14px; font-weight:600; margin-bottom:4px;">Drag & drop CSV file here</p>
+            <p style="color:var(--muted); font-size:12px;">or click to browse</p>
+            <input type="file" id="csvFile" accept=".csv" style="display:none;" onchange="handleCSV(this)">
+        </div>
+        <div id="csvFileName" style="margin-top:12px; font-size:13px; color:var(--muted); display:none;">
+            <i class="fas fa-file-csv" style="color:var(--success); margin-right:6px;"></i>
+            <span id="csvName"></span>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+            <button class="btn btn-outline" onclick="closeModal('importModal')">Cancel</button>
+            <button class="btn btn-primary" id="uploadCsvBtn" onclick="uploadCSV()" disabled><i class="fas fa-upload"></i> Upload</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auth
+    if (!token) window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Admin';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'A')[0].toUpperCase();
+
+    let allLeads = [];
+    let employees = [];
+    let currentPage = 1;
+    const perPage = 15;
+
+    // Animated counter
+    function animateCounter(el, target) {
+        let current = 0;
+        const increment = Math.ceil(target / 30);
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) { current = target; clearInterval(timer); }
+            el.textContent = current;
+            el.classList.add('count-anim');
+        }, 30);
+    }
+
+    // Load employees for dropdowns
+    async function loadEmployees() {
+        try {
+            const res = await fetch('/api/admin/employees', { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            employees = data.employees || [];
+            const selects = [document.getElementById('leadAssigned'), document.getElementById('filterAssigned')];
+            selects.forEach(sel => {
+                const firstOpt = sel.options[0].outerHTML;
+                sel.innerHTML = firstOpt;
+                employees.forEach(emp => {
+                    sel.innerHTML += `<option value="${emp._id}">${emp.name}</option>`;
+                });
+            });
+        } catch(e) { console.error('Failed to load employees', e); }
+    }
+
+    // Load leads
+    async function loadLeads() {
+        try {
+            const res = await fetch('/api/leads', { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            allLeads = data.leads || [];
+            updateStats();
+            filterLeads();
+        } catch(e) {
+            showToast('Failed to load leads', 'error');
+            console.error(e);
+        }
+    }
+
+    function updateStats() {
+        const total = allLeads.length;
+        const newCount = allLeads.filter(l => l.status === 'New').length;
+        const contacted = allLeads.filter(l => l.status === 'Contacted').length;
+        const closed = allLeads.filter(l => l.status === 'Closed').length;
+        animateCounter(document.getElementById('statTotal'), total);
+        animateCounter(document.getElementById('statNew'), newCount);
+        animateCounter(document.getElementById('statContacted'), contacted);
+        animateCounter(document.getElementById('statClosed'), closed);
+    }
+
+    function filterLeads() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('filterStatus').value;
+        const source = document.getElementById('filterSource').value;
+        const assigned = document.getElementById('filterAssigned').value;
+        const priority = document.getElementById('filterPriority').value;
+
+        let filtered = allLeads.filter(l => {
+            const matchSearch = !search || String(l.name||'').toLowerCase().includes(search) || String(l.phone||'').includes(search) || String(l.email||'').toLowerCase().includes(search) || String(l.city||'').toLowerCase().includes(search);
+            const matchStatus = !status || l.status === status;
+            const matchSource = !source || l.source === source;
+            const matchAssigned = !assigned || l.assigned_to === assigned;
+            const matchPriority = !priority || l.priority === priority;
+            return matchSearch && matchStatus && matchSource && matchAssigned && matchPriority;
+        });
+
+        currentPage = 1;
+        renderTable(filtered);
+    }
+
+    function renderTable(leads) {
+        const start = (currentPage - 1) * perPage;
+        const pageLeads = leads.slice(start, start + perPage);
+        const tbody = document.getElementById('leadsBody');
+
+        if (!pageLeads.length) {
+            tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fas fa-inbox"></i><p>No leads found</p></div></td></tr>`;
+        } else {
+            tbody.innerHTML = pageLeads.map(l => {
+                const statusClass = 'badge-' + (l.status||'new').toLowerCase().replace(' ', '_');
+                const empName = employees.find(e => e._id === l.assigned_to)?.name || 'Unassigned';
+                const phone = (l.phone||'').replace(/\D/g, '');
+                let priorityColor = '#3b82f6';
+                if (l.priority === 'High') priorityColor = '#ef4444';
+                if (l.priority === 'Medium') priorityColor = '#f59e0b';
+                
+                return `
+                <tr class="lead-row">
+                    <td style="font-weight:600; color:#fff;">${l.name || '—'}</td>
+                    <td>${l.phone || '—'}</td>
+                    <td style="color:var(--muted);">${l.email || '—'}</td>
+                    <td>${l.city || '—'}</td>
+                    <td style="color:var(--success); font-weight:600;">${l.budget || '—'}</td>
+                    <td><span style="font-size:12px; color:var(--muted);">${l.source || '—'}</span></td>
+                    <td><div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:${priorityColor};box-shadow:0 0 8px ${priorityColor}80"></span> <span style="font-size:12px; font-weight:600;">${l.priority||'Medium'}</span></div></td>
+                    <td><span class="badge ${statusClass}">${l.status || 'New'}</span></td>
+                    <td style="font-size:12px;">${empName}</td>
+                    <td>
+                        <div style="display:flex; gap:4px;">
+                            <a href="https://wa.me/${phone}" target="_blank" class="action-btn btn-whatsapp" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                            <a href="tel:${l.phone}" class="action-btn btn-call" title="Call"><i class="fas fa-phone"></i></a>
+                            <button class="action-btn btn-edit" onclick='editLead(${JSON.stringify(l).replace(/'/g, "&#39;")})'  title="Edit"><i class="fas fa-pen"></i></button>
+                            <button class="action-btn btn-delete" onclick="deleteLead('${l._id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Pagination
+        const totalPages = Math.ceil(leads.length / perPage);
+        document.getElementById('paginationInfo').textContent = `Showing ${start+1}–${Math.min(start+perPage, leads.length)} of ${leads.length} leads`;
+        const pagDiv = document.getElementById('paginationBtns');
+        pagDiv.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+            pagDiv.innerHTML += `<button class="pagination-btn ${i===currentPage?'active':''}" onclick="goToPage(${i}, ${JSON.stringify(leads).length > 50000 ? '[]' : 'filtered'})">${i}</button>`;
+        }
+        // Store filtered for pagination
+        window._filteredLeads = leads;
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderTable(window._filteredLeads || allLeads);
+    }
+
+    // Modal helpers
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Add New Lead';
+        document.getElementById('leadId').value = '';
+        document.getElementById('leadForm').reset();
+        openModal('leadModal');
+    }
+
+    function editLead(lead) {
+        document.getElementById('modalTitle').textContent = 'Edit Lead';
+        document.getElementById('leadId').value = lead._id;
+        document.getElementById('leadName').value = lead.name || '';
+        document.getElementById('leadPhone').value = lead.phone || '';
+        document.getElementById('leadEmail').value = lead.email || '';
+        document.getElementById('leadCity').value = lead.city || '';
+        document.getElementById('leadBudget').value = lead.budget || '';
+        document.getElementById('leadSource').value = lead.source || 'Website';
+        document.getElementById('leadAssigned').value = lead.assigned_to || '';
+        document.getElementById('leadPriority').value = lead.priority || 'Medium';
+        document.getElementById('leadAutoReassign').checked = lead.auto_reassign !== false;
+        document.getElementById('leadNotes').value = lead.notes || '';
+        openModal('leadModal');
+    }
+
+    async function saveLead(e) {
+        e.preventDefault();
+        const id = document.getElementById('leadId').value;
+        const body = {
+            name: document.getElementById('leadName').value,
+            phone: document.getElementById('leadPhone').value,
+            email: document.getElementById('leadEmail').value,
+            city: document.getElementById('leadCity').value,
+            budget: document.getElementById('leadBudget').value,
+            source: document.getElementById('leadSource').value,
+            assigned_to: document.getElementById('leadAssigned').value || null,
+            priority: document.getElementById('leadPriority').value,
+            auto_reassign: document.getElementById('leadAutoReassign').checked,
+            notes: document.getElementById('leadNotes').value
+        };
+        try {
+            const url = id ? `/api/leads/${id}` : '/api/leads';
+            const method = id ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method,
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) {
+                showToast(id ? 'Lead updated!' : 'Lead created!', 'success');
+                closeModal('leadModal');
+                loadLeads();
+            } else {
+                const d = await res.json();
+                showToast(d.error || 'Failed to save lead', 'error');
+            }
+        } catch(e) { showToast('Error saving lead', 'error'); }
+    }
+
+    async function deleteLead(id) {
+        if (!confirm('Delete this lead?')) return;
+        try {
+            const res = await fetch(`/api/leads/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                showToast('Lead deleted', 'success');
+                loadLeads();
+            } else {
+                showToast('Failed to delete lead', 'error');
+            }
+        } catch(e) { showToast('Error deleting lead', 'error'); }
+    }
+
+    // CSV Import
+    function openImportModal() {
+        document.getElementById('csvFile').value = '';
+        document.getElementById('csvFileName').style.display = 'none';
+        document.getElementById('uploadCsvBtn').disabled = true;
+        openModal('importModal');
+    }
+
+    // Drag & Drop
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.csv')) {
+            document.getElementById('csvFile').files = e.dataTransfer.files;
+            handleCSV({ files: [file] });
+        } else {
+            showToast('Please upload a CSV file', 'error');
+        }
+    });
+
+    function handleCSV(input) {
+        const file = input.files[0];
+        if (file) {
+            document.getElementById('csvName').textContent = file.name;
+            document.getElementById('csvFileName').style.display = 'block';
+            document.getElementById('uploadCsvBtn').disabled = false;
+        }
+    }
+
+    async function uploadCSV() {
+        const file = document.getElementById('csvFile').files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await fetch('/api/leads/bulk', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            if (res.ok) {
+                const d = await res.json();
+                showToast(`Imported ${d.count || 0} leads!`, 'success');
+                closeModal('importModal');
+                loadLeads();
+            } else {
+                showToast('Import failed', 'error');
+            }
+        } catch(e) { showToast('Import error', 'error'); }
+    }
+
+    // Socket.IO for real-time
+    try {
+        const socket = io();
+        socket.on('lead_update', () => loadLeads());
+        socket.on('new_lead', () => {
+            loadLeads();
+            showToast('New lead received!', 'info');
+        });
+    } catch(e) { console.log('Socket.IO not available'); }
+
+    // Init
+    loadEmployees();
+    loadLeads();
+</script>
+{% endblock %}

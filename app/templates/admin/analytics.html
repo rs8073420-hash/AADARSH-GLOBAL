@@ -1,126 +1,424 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Analytics — Richa Global Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Enterprise Analytics Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f0f1a', card: '#1a1a2e', border: 'rgba(99,102,241,0.15)',
+                        primary: '#6366f1', accent: '#8b5cf6', success: '#10b981', warning: '#f59e0b', danger: '#ef4444'
+                    },
+                    animation: { 'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }
+                }
+            }
+        }
+    </script>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#0f0f1a;color:#e2e8f0;display:flex}
-        :root{--primary:#6366f1;--accent:#8b5cf6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1a1a2e;--card2:#16213e;--border:rgba(99,102,241,0.15);--muted:#94a3b8;--bg:#0f0f1a}
-        .sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
-        .sidebar-brand{padding:22px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
-        .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
-        .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:var(--muted)}
+        body { font-family: 'Inter', sans-serif; background-color: #0f0f1a; color: #e2e8f0; display: flex; }
+        .glass-card { background: rgba(26, 26, 46, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(99,102,241,0.15); border-radius: 16px; transition: transform 0.2s, box-shadow 0.2s; }
+        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(99,102,241, 0.2); }
+        .kpi-gradient { background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(26,26,46,0) 100%); }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Sidebar CSS (Required for include) */
+        .sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:#1a1a2e;border-right:1px solid rgba(99,102,241,0.15);display:flex;flex-direction:column;z-index:100}
+        .sidebar-brand{padding:22px 20px;border-bottom:1px solid rgba(99,102,241,0.15);display:flex;align-items:center;gap:12px}
+        .logo{width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+        .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:#94a3b8}
         .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
-        .nav-section{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
-        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:2px}
-        .nav-item:hover,.nav-item.active{background:rgba(99,102,241,.15);color:var(--primary)}
+        .nav-section{font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:2px}
+        .nav-item:hover,.nav-item.active{background:rgba(99,102,241,.15);color:#6366f1}
         .nav-item i{width:18px;text-align:center}
         .sidebar-footer{padding:16px 12px}
-        .user-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
-        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
-        .user-name{font-size:13px;font-weight:600;color:#fff}.user-role{font-size:11px;color:var(--muted)}
-        .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+        .user-card{background:#16213e;border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0}
+        .user-name{font-size:13px;font-weight:600;color:#fff}.user-role{font-size:11px;color:#94a3b8}
+        .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
         .logout-btn:hover{background:rgba(239,68,68,.2)}
-        .main{margin-left:260px;flex:1;min-height:100vh}
-        .topbar{position:sticky;top:0;background:rgba(15,15,26,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;z-index:90}
-        .topbar-title{font-size:18px;font-weight:700;color:#fff}
-        .content{padding:28px}
-        .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
-        .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px}
-        .card-title{font-size:15px;font-weight:600;color:#fff;margin-bottom:18px}
-        table{width:100%;border-collapse:collapse}
-        th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;border-bottom:1px solid var(--border)}
-        td{padding:12px 14px;font-size:13px;border-bottom:1px solid rgba(99,102,241,.05)}
-        tr:last-child td{border-bottom:none}
-        .progress-bar{background:rgba(99,102,241,.1);border-radius:4px;height:8px;overflow:hidden}
-        .progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;transition:width .8s ease}
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
     </style>
 </head>
-<body>
-<nav class="sidebar">
-    <div class="sidebar-brand"><div class="logo">R</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Admin Panel</div></div></div>
-    <div class="sidebar-nav">
-        <div class="nav-section">Main</div>
-        <a href="/admin/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="/admin/employees" class="nav-item"><i class="fas fa-users"></i> Employees</a>
-        <a href="/admin/tasks" class="nav-item"><i class="fas fa-tasks"></i> Tasks</a>
-        <a href="/admin/attendance" class="nav-item"><i class="fas fa-clock"></i> Attendance</a>
-        <div class="nav-section">Insights</div>
-        <a href="/admin/analytics" class="nav-item active"><i class="fas fa-chart-line"></i> Analytics</a>
-        <a href="/admin/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages</a>
-    </div>
-    <div class="sidebar-footer">
-        <div class="user-card"><div class="avatar" id="sidebarAvatar">A</div><div><div class="user-name" id="sidebarName">Admin</div><div class="user-role">Administrator</div></div></div>
-        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
-    </div>
-</nav>
-<div class="main">
-    <div class="topbar"><div class="topbar-title">Analytics & Insights</div></div>
-    <div class="content">
-        <div class="charts-grid">
-            <div class="card"><div class="card-title">Task Distribution by Status</div><canvas id="statusChart" height="250"></canvas></div>
-            <div class="card"><div class="card-title">Task Distribution by Priority</div><canvas id="priorityChart" height="250"></canvas></div>
-            <div class="card"><div class="card-title">Attendance Trend (Last 14 Days)</div><canvas id="attChart" height="250"></canvas></div>
-            <div class="card"><div class="card-title">Monthly Tasks (Last 6 Months)</div><canvas id="monthlyChart" height="250"></canvas></div>
+<body class="bg-dark text-slate-300">
+
+{% include 'components/admin_sidebar.html' %}
+
+<div class="ml-[260px] flex-1 flex flex-col min-h-screen">
+    <!-- Topbar & Filters -->
+    <div class="sticky top-0 bg-dark/90 backdrop-blur-md border-b border-border p-4 px-6 flex items-center justify-between z-50">
+        <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm shadow-lg shadow-primary/20"><i class="fas fa-chart-line"></i></div> 
+            Enterprise Command Center
+        </h1>
+        <div class="flex gap-3">
+            <select id="filterDate" class="bg-card border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary text-slate-300">
+                <option value="today">Today</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d" selected>Last 30 Days</option>
+            </select>
+            <button onclick="loadAll()" class="bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-all">
+                <i class="fas fa-sync-alt mr-2"></i> Refresh Data
+            </button>
         </div>
-        <div class="card">
-            <div class="card-title">Employee Productivity Ranking</div>
-            <table>
-                <thead><tr><th>#</th><th>Employee</th><th>Total Tasks</th><th>Completed</th><th>Productivity</th><th>Score</th></tr></thead>
-                <tbody id="prodTable"></tbody>
-            </table>
+    </div>
+
+    <div class="p-6 space-y-6 flex-1 overflow-y-auto">
+        
+        <!-- TOP SUMMARY CARDS -->
+        <div id="kpi-skeleton" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <!-- Loading Skeletons injected by JS -->
+        </div>
+        <div id="kpi-grid" class="hidden grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <!-- Populated by JS -->
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- LEFT MAIN AREA (Span 3) -->
+            <div class="lg:col-span-3 space-y-6">
+                
+                <!-- Section: Lead Analytics -->
+                <div class="glass-card p-5">
+                    <h2 class="text-white font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-bullseye text-accent"></i> Lead Analytics</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="col-span-2" style="height:300px"><div id="chart-lead-conversion"></div></div>
+                        <div style="height:300px"><div id="chart-lead-sources"></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div style="height:250px"><div id="chart-lead-pipeline"></div></div>
+                        <div style="height:250px"><div id="chart-lead-priority"></div></div>
+                    </div>
+                </div>
+
+                <!-- Section: Employee Performance -->
+                <div class="glass-card p-0 overflow-hidden">
+                    <div class="p-5 border-b border-border flex justify-between items-center">
+                        <h2 class="text-white font-bold text-lg flex items-center gap-2"><i class="fas fa-users-cog text-success"></i> Employee Performance Matrix</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-card text-xs uppercase text-slate-400">
+                                <tr>
+                                    <th class="px-6 py-4">Employee</th>
+                                    <th class="px-6 py-4">Assigned Leads</th>
+                                    <th class="px-6 py-4">Converted</th>
+                                    <th class="px-6 py-4">Reassigned (SLA)</th>
+                                    <th class="px-6 py-4">Productivity Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="emp-perf-table" class="divide-y divide-border/50">
+                                <tr><td colspan="5" class="text-center p-8 text-slate-500"><i class="fas fa-spinner fa-spin text-2xl"></i></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section: Task Analytics -->
+                <div class="glass-card p-5">
+                    <h2 class="text-white font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-tasks text-warning"></i> Task Analytics</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div style="height:280px"><div id="chart-task-trend"></div></div>
+                        <div style="height:280px"><div id="chart-task-priority"></div></div>
+                    </div>
+                </div>
+
+                <!-- Section: Attendance Analytics -->
+                <div class="glass-card p-5">
+                    <h2 class="text-white font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-calendar-check text-blue-500"></i> Attendance & Presence</h2>
+                    <div style="height:320px"><div id="chart-attendance-daily"></div></div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT SIDEBAR AREA (Span 1) -->
+            <div class="space-y-6">
+                
+                <!-- AI Insights Widget -->
+                <div class="glass-card p-5 relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+                    <h2 class="text-white font-bold text-lg mb-4 flex items-center gap-2">
+                        <i class="fas fa-brain text-purple-400"></i> AI Insights
+                    </h2>
+                    <div id="ai-insights-content" class="space-y-4 text-sm">
+                        <div class="text-center p-4 text-slate-500"><i class="fas fa-spinner fa-spin"></i> Analyzing data...</div>
+                    </div>
+                </div>
+
+                <!-- Live Activity / Socket Widget -->
+                <div class="glass-card p-0 flex flex-col h-[500px]">
+                    <div class="p-4 border-b border-border flex items-center justify-between">
+                        <h2 class="text-white font-bold text-sm flex items-center gap-2">
+                            <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-success"></span></span>
+                            Live Activity
+                        </h2>
+                        <span class="bg-success/20 text-success text-xs px-2 py-0.5 rounded-full font-bold" id="online-count">0 Online</span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="live-feed">
+                        <div class="text-center p-4 text-slate-500 text-xs">Waiting for live events...</div>
+                    </div>
+                </div>
+                
+                <!-- Reassignment Analytics Mini -->
+                <div class="glass-card p-5">
+                    <h2 class="text-white font-bold text-sm mb-4 flex items-center gap-2"><i class="fas fa-exchange-alt text-danger"></i> Reassignment / SLAs</h2>
+                    <div style="height:200px"><div id="chart-reassign-trend"></div></div>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>
+
 <script>
     const token = localStorage.getItem('access_token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (!token || localStorage.getItem('role') !== 'admin') window.location.href = '/login';
+    
     document.getElementById('sidebarName').textContent = user.name || 'Admin';
     document.getElementById('sidebarAvatar').textContent = (user.name||'A')[0].toUpperCase();
     function logout(){localStorage.clear();window.location.href='/login';}
 
-    async function api(url){const r=await fetch(url,{headers:{'Authorization':'Bearer '+token}});return r.json();}
-
-    const CHART_OPTS = {
-        plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Inter'}}}},
-        scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(99,102,241,.05)'}},y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(99,102,241,.05)'}}}
+    window.Apex = {
+        chart: { foreColor: '#94a3b8', toolbar: { show: false }, background: 'transparent' },
+        grid: { borderColor: 'rgba(99,102,241,0.05)', strokeDashArray: 4 },
+        tooltip: { theme: 'dark' }
     };
 
+    const fetchAPI = async (endpoint) => {
+        try { const res = await fetch(endpoint, { headers: { 'Authorization': `Bearer ${token}` } }); return await res.json(); }
+        catch(e) { console.error("API Error", e); return null; }
+    };
+
+    const kpiGrid = document.getElementById('kpi-grid');
+    const kpiSkeleton = document.getElementById('kpi-skeleton');
+    
+    function renderKPIs(data) {
+        kpiSkeleton.classList.add('hidden');
+        kpiGrid.classList.remove('hidden');
+        
+        const kpis = [
+            { label: 'Total Employees', val: data.total_employees, icon: 'fa-users', color: 'from-blue-500 to-cyan-400' },
+            { label: 'Online Now', val: '<span id="kpi-online">0</span>', icon: 'fa-circle text-success', color: 'from-slate-700 to-slate-800' },
+            { label: 'Total Leads', val: data.total_leads, icon: 'fa-funnel-dollar', color: 'from-indigo-500 to-purple-600' },
+            { label: 'High Priority', val: data.high_priority_leads, icon: 'fa-fire', color: 'from-red-500 to-rose-600' },
+            { label: 'Converted', val: data.converted_leads, icon: 'fa-check-circle', color: 'from-emerald-500 to-teal-400' },
+            { label: 'Pending Leads', val: data.pending_leads, icon: 'fa-hourglass-half', color: 'from-amber-500 to-orange-400' },
+            { label: 'Reassigned', val: data.reassigned_leads, icon: 'fa-exchange-alt', color: 'from-slate-600 to-slate-700' },
+            { label: 'Completed Tasks', val: data.completed_tasks, icon: 'fa-tasks', color: 'from-violet-500 to-fuchsia-500' },
+            { label: 'Overdue Tasks', val: data.overdue_tasks, icon: 'fa-exclamation-circle', color: 'from-rose-500 to-red-600' },
+            { label: 'Present Today', val: data.present_employees, icon: 'fa-user-check', color: 'from-teal-500 to-emerald-500' },
+            { label: 'Late Today', val: data.late_employees, icon: 'fa-clock', color: 'from-yellow-500 to-amber-600' }
+        ];
+
+        kpiGrid.innerHTML = kpis.map(k => `
+            <div class="glass-card kpi-gradient p-4 relative overflow-hidden group">
+                <div class="absolute -right-4 -top-4 w-16 h-16 bg-white/5 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <div class="flex items-start justify-between mb-2">
+                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wide z-10 relative">${k.label}</div>
+                    <i class="fas ${k.icon} text-lg opacity-80 bg-clip-text text-transparent bg-gradient-to-r ${k.color}"></i>
+                </div>
+                <div class="text-2xl font-black text-white z-10 relative">${k.val}</div>
+            </div>
+        `).join('');
+    }
+
+    let charts = {};
+
+    function renderCharts(leads, tasks, att, reassign) {
+        Object.values(charts).forEach(c => c.destroy());
+        charts = {};
+
+        charts.leadConv = new ApexCharts(document.querySelector("#chart-lead-conversion"), {
+            series: [{ name: 'Converted Leads', data: leads.conversion_trend }],
+            chart: { type: 'area', height: 300, sparkline: { enabled: false }, animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+            stroke: { curve: 'smooth', width: 3 },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0, stops: [0, 100] } },
+            colors: ['#10b981'],
+            xaxis: { categories: leads.conversion_dates.map(d => d.slice(5)) }
+        });
+        charts.leadConv.render();
+
+        charts.leadSources = new ApexCharts(document.querySelector("#chart-lead-sources"), {
+            series: Object.values(leads.sources).length > 0 ? Object.values(leads.sources) : [1],
+            chart: { type: 'donut', height: 300 },
+            labels: Object.keys(leads.sources).length > 0 ? Object.keys(leads.sources) : ['No Data'],
+            colors: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'],
+            plotOptions: { pie: { donut: { size: '75%', labels: { show: true, total: { show: true, color: '#fff' } } } } },
+            stroke: { show: false }
+        });
+        charts.leadSources.render();
+
+        charts.leadPipe = new ApexCharts(document.querySelector("#chart-lead-pipeline"), {
+            series: [{ name: 'Leads', data: Object.values(leads.pipeline) }],
+            chart: { type: 'bar', height: 250 },
+            plotOptions: { bar: { borderRadius: 4, horizontal: true, distributed: true } },
+            colors: ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#ec4899', '#64748b'],
+            dataLabels: { enabled: false },
+            xaxis: { categories: Object.keys(leads.pipeline) },
+            legend: { show: false }
+        });
+        charts.leadPipe.render();
+
+        charts.taskTrend = new ApexCharts(document.querySelector("#chart-task-trend"), {
+            series: [
+                { name: 'Completed', data: tasks.completed_trend },
+                { name: 'Created', data: tasks.created_trend }
+            ],
+            chart: { type: 'area', height: 280 },
+            stroke: { curve: 'smooth', width: 2 },
+            colors: ['#10b981', '#6366f1'],
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0 } },
+            xaxis: { categories: tasks.dates.map(d => d.slice(5)) },
+            legend: { position: 'top' }
+        });
+        charts.taskTrend.render();
+
+        charts.attDaily = new ApexCharts(document.querySelector("#chart-attendance-daily"), {
+            series: [
+                { name: 'Present', data: att.daily.map(d=>d.present).reverse() },
+                { name: 'Late', data: att.daily.map(d=>d.late).reverse() },
+                { name: 'Absent', data: att.daily.map(d=>d.absent).reverse() }
+            ],
+            chart: { type: 'bar', height: 320, stacked: true },
+            colors: ['#10b981', '#f59e0b', '#ef4444'],
+            plotOptions: { bar: { borderRadius: 4 } },
+            xaxis: { categories: att.daily.map(d=>d.date.slice(5)).reverse() },
+            legend: { position: 'top' }
+        });
+        charts.attDaily.render();
+        
+        charts.reassignTrend = new ApexCharts(document.querySelector("#chart-reassign-trend"), {
+            series: [{ name: 'SLA Breaches', data: reassign.trend }],
+            chart: { type: 'line', height: 200 },
+            stroke: { curve: 'stepline', width: 3 },
+            colors: ['#ef4444'],
+            xaxis: { categories: reassign.trend_dates.map(d => d.slice(5)) }
+        });
+        charts.reassignTrend.render();
+    }
+
+    function renderPerformanceTable(perf) {
+        const tbody = document.getElementById('emp-perf-table');
+        if (!perf || perf.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-slate-500">No data found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = perf.map(e => {
+            const scoreColor = e.score >= 80 ? 'bg-success' : (e.score >= 50 ? 'bg-warning' : 'bg-danger');
+            const scoreText = e.score >= 80 ? 'text-success' : (e.score >= 50 ? 'text-warning' : 'text-danger');
+            return `
+            <tr class="hover:bg-white/5 transition-colors group">
+                <td class="px-6 py-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-xs">
+                        ${e.name[0]}
+                    </div>
+                    <span class="font-semibold text-white group-hover:text-primary transition-colors">${e.name}</span>
+                </td>
+                <td class="px-6 py-4">${e.assigned}</td>
+                <td class="px-6 py-4 font-medium text-emerald-400">${e.converted}</td>
+                <td class="px-6 py-4 font-medium ${e.reassigned>0?'text-rose-400':''}">${e.reassigned}</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold ${scoreText} w-8">${e.score}%</span>
+                        <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full ${scoreColor} rounded-full" style="width: ${e.score}%"></div>
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function loadAIInsights() {
+        const aiContainer = document.getElementById('ai-insights-content');
+        const res = await fetchAPI('/api/ai/company-summary');
+        if (res && res.summary) {
+            let html = res.summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>').replace(/\n/g, '<br>');
+            aiContainer.innerHTML = `
+                <div class="bg-purple-500/10 border border-purple-500/20 p-4 rounded-xl">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">AI Summary</span>
+                        <span class="text-xs text-slate-400">Generated just now</span>
+                    </div>
+                    <div class="leading-relaxed text-slate-300">${html}</div>
+                </div>
+            `;
+        } else {
+            aiContainer.innerHTML = '<div class="text-slate-500">AI insights unavailable.</div>';
+        }
+    }
+
     async function loadAll() {
-        const [statusData,priorityData,attData,monthlyData,prodData] = await Promise.all([
-            api('/api/analytics/tasks-overview'),
-            api('/api/analytics/tasks-by-priority'),
-            api('/api/analytics/attendance-trend?days=14'),
-            api('/api/analytics/monthly-tasks'),
-            api('/api/analytics/employee-productivity')
+        kpiGrid.classList.add('hidden');
+        kpiSkeleton.classList.remove('hidden');
+        kpiSkeleton.innerHTML = Array(11).fill('<div class="h-24 bg-white/5 rounded-2xl animate-pulse"></div>').join('');
+        
+        const [kpis, leads, perf, tasks, att, reassign] = await Promise.all([
+            fetchAPI('/api/analytics/v2/kpis'),
+            fetchAPI('/api/analytics/v2/leads'),
+            fetchAPI('/api/analytics/v2/performance'),
+            fetchAPI('/api/analytics/v2/tasks'),
+            fetchAPI('/api/analytics/v2/attendance'),
+            fetchAPI('/api/analytics/v2/reassignments')
         ]);
 
-        new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:Object.keys(statusData),datasets:[{data:Object.values(statusData),backgroundColor:['#f59e0b','#6366f1','#10b981','#ef4444'],borderWidth:0}]},options:{cutout:'65%',plugins:{legend:{labels:{color:'#94a3b8'}}}}});
-        new Chart(document.getElementById('priorityChart'),{type:'pie',data:{labels:Object.keys(priorityData),datasets:[{data:Object.values(priorityData),backgroundColor:['#ef4444','#f59e0b','#10b981'],borderWidth:0}]},options:{plugins:{legend:{labels:{color:'#94a3b8'}}}}});
-
-        const trend = attData.trend||[];
-        new Chart(document.getElementById('attChart'),{type:'line',data:{labels:trend.map(t=>t.date.slice(5)),datasets:[{label:'Present',data:trend.map(t=>t.present),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',tension:.4,fill:true},{label:'Late',data:trend.map(t=>t.late),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',tension:.4,fill:true}]},options:{...CHART_OPTS}});
-
-        const monthly = monthlyData.monthly||[];
-        new Chart(document.getElementById('monthlyChart'),{type:'bar',data:{labels:monthly.map(m=>m.label),datasets:[{label:'Created',data:monthly.map(m=>m.created),backgroundColor:'rgba(99,102,241,.7)',borderRadius:6},{label:'Completed',data:monthly.map(m=>m.completed),backgroundColor:'rgba(16,185,129,.7)',borderRadius:6}]},options:{...CHART_OPTS}});
-
-        const emps = prodData.employees||[];
-        const tbody = document.getElementById('prodTable');
-        tbody.innerHTML = emps.map((e,i)=>`
-            <tr>
-                <td style="font-weight:700;color:${i<3?'#f59e0b':'var(--muted)'}">${i+1}</td>
-                <td><span style="font-weight:600;color:#fff">${e.name}</span><br><span style="font-size:11px;color:var(--muted)">${e.employee_id||''}</span></td>
-                <td>${e.total_tasks}</td>
-                <td>${e.completed}</td>
-                <td><div class="progress-bar"><div class="progress-fill" style="width:${e.productivity}%"></div></div></td>
-                <td style="font-weight:700;color:${e.productivity>=70?'#10b981':e.productivity>=40?'#f59e0b':'#ef4444'}">${e.productivity}%</td>
-            </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:30px">No data</td></tr>';
+        if(kpis) renderKPIs(kpis);
+        if(leads && tasks && att && reassign) renderCharts(leads, tasks, att, reassign);
+        if(perf) renderPerformanceTable(perf.performance);
+        
+        loadAIInsights();
     }
+
+    const socket = io();
+    const feed = document.getElementById('live-feed');
+    let onlineUsers = new Set();
+    
+    socket.on('connect', () => { socket.emit('auth', { token: token }); });
+    socket.on('users_online', (data) => {
+        onlineUsers = new Set(data.users || []);
+        document.getElementById('online-count').textContent = `${onlineUsers.size} Online`;
+        const kpiOnline = document.getElementById('kpi-online');
+        if(kpiOnline) kpiOnline.textContent = onlineUsers.size;
+    });
+
+    socket.on('new_notification', (data) => {
+        const item = document.createElement('div');
+        item.className = 'bg-white/5 border border-white/5 p-3 rounded-xl text-sm animate-[slideIn_0.3s_ease-out]';
+        item.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0"><i class="fas fa-bell text-xs"></i></div>
+                <div>
+                    <div class="font-semibold text-white text-xs">${data.title}</div>
+                    <div class="text-slate-400 text-[11px] mt-0.5 line-clamp-2">${data.message}</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Just now</div>
+                </div>
+            </div>`;
+        feed.prepend(item);
+        if(feed.children.length > 20) feed.removeChild(feed.lastChild);
+    });
+
     loadAll();
 </script>
+<style>@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }</style>
 </body>
 </html>

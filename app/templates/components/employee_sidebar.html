@@ -1,0 +1,85 @@
+<!-- Tailwind for Notifications -->
+<style>
+    /* Fix for long names and logout button */
+    .sidebar-user { flex-shrink: 0; margin-bottom: 12px; }
+    .sidebar-user > div:last-child { min-width: 0; overflow: hidden; }
+    .user-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .logout-btn { width: calc(100% - 24px); margin: 0 12px 12px 12px; padding: 10px; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2); border-radius: 8px; color: #ef4444; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; flex-shrink: 0; }
+    .logout-btn:hover { background: rgba(239,68,68,.2); }
+</style>
+<script>
+    window.tailwind = { config: { corePlugins: { preflight: false } } };
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <div class="logo">A</div>
+        <div>
+            <div class="brand-name">Aadarsh Global</div>
+            <div class="brand-sub">Employee Portal</div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section-title">Main Menu</div>
+        <a href="/employee/dashboard" class="nav-item {% if '/employee/dashboard' in request.path %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="/employee/tasks" class="nav-item {% if '/employee/tasks' in request.path %}active{% endif %}"><i class="fas fa-tasks"></i> My Tasks</a>
+        <a href="/employee/leads" class="nav-item {% if '/employee/leads' in request.path %}active{% endif %}"><i class="fas fa-funnel-dollar"></i> My Leads</a>
+        <a href="/employee/attendance" class="nav-item {% if '/employee/attendance' in request.path %}active{% endif %}"><i class="fas fa-clock"></i> Attendance</a>
+        <a href="/employee/calendar" class="nav-item {% if '/employee/calendar' in request.path %}active{% endif %}"><i class="fas fa-calendar-alt"></i> Calendar</a>
+        <a href="/employee/notes" class="nav-item {% if '/employee/notes' in request.path %}active{% endif %}"><i class="fas fa-sticky-note"></i> Sticky Notes</a>
+        <a href="/employee/messages" class="nav-item {% if '/employee/messages' in request.path %}active{% endif %}"><i class="fas fa-envelope"></i> Messages</a>
+        
+        <div class="nav-section-title">Account</div>
+        <a href="/employee/profile" class="nav-item {% if '/employee/profile' in request.path %}active{% endif %}"><i class="fas fa-user"></i> My Profile</a>
+        <a href="/employee/notifications" class="nav-item {% if '/employee/notifications' in request.path %}active{% endif %}" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;"><i class="fas fa-bell"></i> Notifications</div>
+            <span class="global-bell-badge-sync bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+        </a>
+    </nav>
+    <div class="sidebar-user">
+        <div class="user-avatar" id="sidebarAvatar">E</div>
+        <div>
+            <div class="user-name" id="sidebarName">Employee</div>
+            <div class="user-role" id="sidebarRole">Staff</div>
+        </div>
+    </div>
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+
+<script>
+    // Global Notification Logic
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('access_token');
+        let unreadCount = 0;
+
+        async function initGlobalNotifications() {
+            if(!token) return;
+            try {
+                const res = await fetch('/api/notifications/unread-count', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                if(data && data.unread_count !== undefined) {
+                    updateBadge(data.unread_count);
+                }
+            } catch(e) {}
+        }
+        
+        function updateBadge(count) {
+            unreadCount = count;
+            const syncBadges = document.querySelectorAll('.global-bell-badge-sync');
+            if(count > 0) {
+                syncBadges.forEach(b => {
+                    b.textContent = count > 99 ? '99+' : count;
+                    b.classList.remove('hidden');
+                });
+            } else {
+                syncBadges.forEach(b => b.classList.add('hidden'));
+            }
+        }
+
+        initGlobalNotifications();
+        
+        // Expose to window so socket.io inside messages.html or elsewhere can trigger it
+        window.updateGlobalNotificationCount = () => initGlobalNotifications();
+    });
+</script>

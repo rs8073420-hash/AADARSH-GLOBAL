@@ -30,6 +30,22 @@ def init_db(app):
     db.tasks.create_index([('assigned_to', ASCENDING)])
     db.tasks.create_index([('due_date', ASCENDING)])
     db.tasks.create_index([('created_at', DESCENDING)])
+    # New collections indexes
+    db.leads.create_index('phone', unique=True)
+    db.leads.create_index('assigned_to')
+    db.leads.create_index('status')
+    db.leads.create_index('created_at')
+    db.notifications.create_index('recipient_id')
+    db.notifications.create_index('is_read')
+    db.activity_logs.create_index('employee_id')
+    db.activity_logs.create_index('timestamp')
+    db.gamification.create_index('employee_id')
+    db.gamification.create_index('badge')
+    db.calendar_events.create_index('assigned_to')
+    db.calendar_events.create_index('start')
+    db.calendar_events.create_index('end')
+    db.notes.create_index('employee_id')
+    db.productivity.create_index('employee_id')
     return db
 
 def get_db():

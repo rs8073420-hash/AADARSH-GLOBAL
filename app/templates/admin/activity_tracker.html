@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block title %}Activity Tracker — Aadarsh Global{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tracker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .tracker-card { background: rgba(26,26,46,0.85); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all 0.3s cubic-bezier(.4,0,.2,1); position: relative; overflow: hidden; }
+    .tracker-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.3); }
+    .tracker-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; }
+    .tracker-card.online::before { background: linear-gradient(90deg, var(--success), #34d399); }
+    .tracker-card.idle::before { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+    .tracker-card.offline::before { background: linear-gradient(90deg, #64748b, #94a3b8); }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-dot.online { background: var(--success); box-shadow: 0 0 8px rgba(16,185,129,0.5); animation: pulse-dot 2s infinite; }
+    .status-dot.idle { background: var(--warning); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+    .status-dot.offline { background: #64748b; }
+    @keyframes pulse-dot { 0%,100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+    .avatar-circle { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: #fff; flex-shrink: 0; }
+    .shift-timer { font-family: 'Inter', monospace; font-size: 18px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+    .activity-text { font-size: 12px; color: var(--muted); padding: 8px 12px; background: rgba(99,102,241,0.06); border-radius: 8px; margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+    .filter-chip { padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card2); color: var(--muted); transition: all 0.2s; }
+    .filter-chip:hover, .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .skeleton { background: linear-gradient(90deg, var(--card2) 25%, rgba(99,102,241,0.08) 50%, var(--card2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .count-anim { animation: countUp 0.5s ease forwards; }
+    .auto-refresh-bar { height: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 2px; animation: shrink 30s linear infinite; transform-origin: left; }
+    @keyframes shrink { 0% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Sidebar -->
+{% include 'components/admin_sidebar.html' %}
+
+<div class="main-content">
+    <div class="topbar">
+        <div class="topbar-title"><i class="fas fa-satellite-dish" style="margin-right:8px; color:var(--primary);"></i> Live Activity Tracker</div>
+        <div class="topbar-actions">
+            <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted);">
+                <div class="status-dot online"></div> Auto-refresh: 30s
+            </div>
+            <div class="notif-btn" onclick="loadActivity()"><i class="fas fa-sync-alt"></i></div>
+        </div>
+    </div>
+
+    <!-- Auto-refresh progress bar -->
+    <div class="auto-refresh-bar" id="refreshBar"></div>
+
+    <div class="page-content">
+        <!-- Stats -->
+        <div class="grid grid-3" style="margin-bottom:24px;">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:linear-gradient(135deg,var(--success),#34d399); color:#fff;">
+                    <i class="fas fa-circle"></i>
+                </div>
+                <div class="stat-value" id="statOnline">
+                    <div class="skeleton" style="width:40px;height:28px;"></div>
+                </div>
+                <div class="stat-label">Online</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:linear-gradient(135deg,var(--warning),#fbbf24); color:#fff;">
+                    <i class="fas fa-moon"></i>
+                </div>
+                <div class="stat-value" id="statIdle">
+                    <div class="skeleton" style="width:40px;height:28px;"></div>
+                </div>
+                <div class="stat-label">Idle</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-value" id="statActive">
+                    <div class="skeleton" style="width:40px;height:28px;"></div>
+                </div>
+                <div class="stat-label">Total Active</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div style="display:flex; gap:8px; margin-bottom:20px;">
+            <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-chip" onclick="setFilter('online', this)">🟢 Online</button>
+            <button class="filter-chip" onclick="setFilter('idle', this)">🟡 Idle</button>
+            <button class="filter-chip" onclick="setFilter('offline', this)">⚫ Offline</button>
+        </div>
+
+        <!-- Employee Cards Grid -->
+        <div class="tracker-grid" id="trackerGrid">
+            <div class="tracker-card"><div class="skeleton" style="width:100%;height:100px;"></div></div>
+            <div class="tracker-card"><div class="skeleton" style="width:100%;height:100px;"></div></div>
+            <div class="tracker-card"><div class="skeleton" style="width:100%;height:100px;"></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    if (!token) window.location.href = '/login';
+    document.getElementById('sidebarName').textContent = user.name || 'Admin';
+    document.getElementById('sidebarAvatar').textContent = (user.name || 'A')[0].toUpperCase();
+
+    let allActivities = [];
+    let currentFilter = 'all';
+
+    function animateCounter(el, target) {
+        let current = 0;
+        const increment = Math.max(1, Math.ceil(target / 25));
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) { current = target; clearInterval(timer); }
+            el.textContent = current;
+            el.classList.add('count-anim');
+        }, 30);
+    }
+
+    function formatDuration(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        return `${String(h).padStart(2,'0')}h : ${String(m).padStart(2,'0')}m : ${String(s).padStart(2,'0')}s`;
+    }
+
+    function timeAgo(date) {
+        if (!date) return 'Never';
+        const diff = Math.floor((Date.now() - new Date(date)) / 1000);
+        if (diff < 60) return `${diff}s ago`;
+        if (diff < 3600) return `${Math.floor(diff/60)} min ago`;
+        if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+        return `${Math.floor(diff/86400)}d ago`;
+    }
+
+    async function loadActivity() {
+        try {
+            // Fetch employees + attendance for activity data
+            const [empRes, attRes] = await Promise.all([
+                fetch('/api/admin/employees', { headers: { 'Authorization': `Bearer ${token}` }}),
+                fetch('/api/attendance/all', { headers: { 'Authorization': `Bearer ${token}` }})
+            ]);
+            const empData = await empRes.json();
+            const attData = await attRes.json();
+            const employees = empData.employees || [];
+            const records = attData.records || [];
+
+            const attMap = {};
+            records.forEach(r => attMap[r.employee_id] = r);
+
+            allActivities = employees.map(emp => {
+                const att = attMap[emp._id];
+                let status = 'offline';
+                let shiftSeconds = 0;
+                let lastAction = null;
+
+                if (att) {
+                    if (att.check_out) {
+                        status = 'offline';
+                        shiftSeconds = (att.working_hours || 0) * 3600;
+                        lastAction = att.check_out;
+                    } else if (att.check_in) {
+                        const elapsed = (Date.now() - new Date(att.check_in)) / 1000;
+                        if (elapsed < 300) status = 'online';
+                        else status = att.last_activity && (Date.now() - new Date(att.last_activity)) < 600000 ? 'online' : 'idle';
+                        shiftSeconds = elapsed;
+                        lastAction = att.last_activity || att.check_in;
+                    }
+                }
+
+                return {
+                    ...emp,
+                    status,
+                    shiftSeconds,
+                    lastAction,
+                    currentActivity: att?.current_page || emp.current_activity || 'No activity tracked',
+                    checkIn: att?.check_in
+                };
+            });
+
+            updateStats();
+            renderCards();
+        } catch(e) {
+            showToast('Failed to load activity data', 'error');
+            console.error(e);
+        }
+    }
+
+    function updateStats() {
+        const online = allActivities.filter(a => a.status === 'online').length;
+        const idle = allActivities.filter(a => a.status === 'idle').length;
+        const active = online + idle;
+        animateCounter(document.getElementById('statOnline'), online);
+        animateCounter(document.getElementById('statIdle'), idle);
+        animateCounter(document.getElementById('statActive'), active);
+    }
+
+    function setFilter(filter, btn) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        renderCards();
+    }
+
+    function renderCards() {
+        let filtered = allActivities;
+        if (currentFilter !== 'all') {
+            filtered = allActivities.filter(a => a.status === currentFilter);
+        }
+
+        const grid = document.getElementById('trackerGrid');
+        if (!filtered.length) {
+            grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--muted);"><i class="fas fa-user-slash" style="font-size:40px; display:block; margin-bottom:12px;"></i>No employees match this filter</div>';
+            return;
+        }
+
+        grid.innerHTML = filtered.map(emp => `
+            <div class="tracker-card ${emp.status}">
+                <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+                    <div class="avatar-circle">${(emp.name||'?')[0].toUpperCase()}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:15px; font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${emp.name || 'Unknown'}</span>
+                            <span class="status-dot ${emp.status}"></span>
+                        </div>
+                        <div style="font-size:12px; color:var(--muted);">${emp.department || 'General'} · ${emp.status.charAt(0).toUpperCase() + emp.status.slice(1)}</div>
+                    </div>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                    <div>
+                        <div style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">Shift Timer</div>
+                        <div class="shift-timer" data-start="${emp.checkIn || ''}" data-seconds="${emp.shiftSeconds}">${formatDuration(emp.shiftSeconds)}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">Last Action</div>
+                        <div style="font-size:13px; color:var(--text); font-weight:500;">${timeAgo(emp.lastAction)}</div>
+                    </div>
+                </div>
+
+                <div class="activity-text">
+                    <i class="fas fa-desktop" style="color:var(--primary);"></i>
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${emp.currentActivity}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Live timer update every second for online employees
+    setInterval(() => {
+        document.querySelectorAll('.shift-timer').forEach(el => {
+            const startStr = el.dataset.start;
+            if (startStr) {
+                const elapsed = (Date.now() - new Date(startStr)) / 1000;
+                el.textContent = formatDuration(elapsed);
+            }
+        });
+    }, 1000);
+
+    // Auto-refresh every 30 seconds
+    setInterval(() => {
+        loadActivity();
+        // Reset animation
+        const bar = document.getElementById('refreshBar');
+        bar.style.animation = 'none';
+        bar.offsetHeight; // trigger reflow
+        bar.style.animation = 'shrink 30s linear infinite';
+    }, 30000);
+
+    // Init
+    loadActivity();
+</script>
+{% endblock %}

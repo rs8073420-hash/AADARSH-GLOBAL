@@ -2,11 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>My Dashboard — Richa Global</title>
+    <title>Attendance — Aadarsh Global</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.tailwind = { config: { corePlugins: { preflight: false } } };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#0f0f1a;color:#e2e8f0;display:flex}
         :root{--primary:#3b82f6;--accent:#06b6d4;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--card:#1e293b;--card2:#0f172a;--border:rgba(59,130,246,0.15);--muted:#94a3b8;--bg:#020617}
@@ -15,15 +19,15 @@
         .logo{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
         .brand-name{font-size:15px;font-weight:700;color:#fff}.brand-sub{font-size:11px;color:var(--muted)}
         .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
-        .nav-section{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
+        .nav-section-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 8px 4px}
         .nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:all .2s;margin-bottom:2px}
         .nav-item:hover,.nav-item.active{background:rgba(59,130,246,.15);color:var(--primary)}
         .nav-item i{width:18px;text-align:center}
         .sidebar-footer{padding:16px 12px}
-        .user-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+        .sidebar-user{margin:0 12px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--border);display:flex;align-items:center;gap:10px;margin-bottom:10px}
         .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
         .user-name{font-size:13px;font-weight:600;color:#fff}.user-role{font-size:11px;color:var(--muted)}
-        .logout-btn{width:100%;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+        .logout-btn{width:calc(100% - 24px);margin:0 12px 12px 12px;padding:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
         .main{margin-left:260px;flex:1;min-height:100vh;background:var(--bg)}
         .topbar{position:sticky;top:0;background:rgba(2,6,23,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;z-index:90}
         .topbar-title{font-size:18px;font-weight:700;color:#fff}
@@ -132,24 +136,15 @@
     </div>
 </div>
 
-<nav class="sidebar">
-    <div class="sidebar-brand"><div class="logo">E</div><div><div class="brand-name">Richa Global</div><div class="brand-sub">Employee Portal</div></div></div>
-    <div class="sidebar-nav">
-        <div class="nav-section">My Workspace</div>
-        <a href="/employee/dashboard" class="nav-item"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="/employee/tasks" class="nav-item"><i class="fas fa-tasks"></i> My Tasks</a>
-        <a href="/employee/attendance" class="nav-item active"><i class="fas fa-chart-pie"></i> Productivity</a>
-        <a href="/employee/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages</a>
-    </div>
-    <div class="sidebar-footer">
-        <div class="user-card"><div class="user-avatar" id="sidebarAvatar">E</div><div><div class="user-name" id="sidebarName">Employee</div><div class="user-role" id="sidebarId">—</div></div></div>
-        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
-    </div>
-</nav>
+{% include 'components/employee_sidebar.html' %}
 
 <div class="main">
     <div class="topbar">
         <div class="topbar-title">Productivity & Attendance</div>
+        <a href="/employee/notifications" class="relative text-slate-300 hover:text-white transition-colors">
+            <i class="fas fa-bell text-xl"></i>
+            <span class="global-bell-badge-sync absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+        </a>
     </div>
     <div class="content">
         
@@ -225,8 +220,16 @@
     if (!token || localStorage.getItem('role') !== 'employee') window.location.href = '/login';
     document.getElementById('sidebarName').textContent = user.name || 'Employee';
     document.getElementById('sidebarAvatar').textContent = (user.name||'E')[0].toUpperCase();
-    document.getElementById('sidebarId').textContent = user.employee_id || '—';
+    const roleEl = document.getElementById('sidebarRole');
+    if(roleEl) roleEl.textContent = user.department || 'Staff';
     document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    
+    function getGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good Morning!';
+        if (hour < 17) return 'Good Afternoon!';
+        return 'Good Evening!';
+    }
 
     function showToast(msg, type='info') {
         const c=document.getElementById('toastContainer');const t=document.createElement('div');
@@ -245,7 +248,7 @@
         const r1 = await api('/api/attendance/employee/dashboard');
         const dash = await r1.json();
         
-        document.getElementById('prodScore').textContent = dash.productivity_score.toFixed(0) + '%';
+        document.getElementById('prodScore').textContent = (dash.productivity_score || 0).toFixed(0) + '%';
         document.getElementById('taskComp').textContent = dash.tasks_completed;
         document.getElementById('taskPend').textContent = dash.tasks_pending;
         document.getElementById('monPresent').textContent = dash.monthly_present;
@@ -257,7 +260,7 @@
         const timeline = document.getElementById('activityTimeline');
         
         if (!rec) {
-            statusEl.textContent = "Good Morning! You haven't checked in.";
+            statusEl.textContent = `${getGreeting()} You haven't checked in.`;
             document.getElementById('checkInBtn').disabled = false;
             document.getElementById('checkOutBtn').disabled = true;
             timeline.innerHTML = '<div style="color:var(--muted);font-size:13px;padding-top:10px">Waiting for check in...</div>';
